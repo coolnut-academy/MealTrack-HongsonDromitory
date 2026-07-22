@@ -1,0 +1,165 @@
+/* ==========================================================================
+   MealTrack - Hongsonศึกษา School Modern Stylesheet
+   ========================================================================== */
+
+/* Design Tokens & Custom Properties */
+:root {
+    --color-emerald-primary: #0f4c3a;
+    --color-emerald-dark: #07281f;
+    --color-emerald-light: #e6f4f0;
+    --color-gold-primary: #c5a059;
+    --color-gold-light: #f9f4e8;
+    --color-gold-dark: #a8823d;
+    --glass-bg: rgba(255, 255, 255, 0.94);
+    --glass-border: rgba(15, 76, 58, 0.15);
+    --backdrop-blur: 16px;
+    --shadow-subtle: 0 4px 20px -2px rgba(15, 76, 58, 0.08);
+    --shadow-glass: 0 20px 40px -15px rgba(7, 40, 31, 0.25);
+    --radius-xl: 1rem;
+    --radius-2xl: 1.25rem;
+    --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-emerald-primary);
+}
+
+/* Base Layout & Typography */
+body {
+    font-family: 'Sarabun', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #f8fafc;
+    color: #1e293b;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Glassmorphism Components */
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--backdrop-blur));
+    -webkit-backdrop-filter: blur(var(--backdrop-blur));
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-glass);
+}
+
+.modal-backdrop {
+    background: rgba(7, 40, 31, 0.65);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: fadeIn var(--transition-fast);
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    transition: all var(--transition-fast);
+}
+.glass-card:hover {
+    box-shadow: var(--shadow-subtle);
+    border-color: rgba(15, 76, 58, 0.2);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(16px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-slide-up {
+    animation: slideUp var(--transition-smooth) forwards;
+}
+
+.animate-fade-in {
+    animation: fadeIn var(--transition-fast) forwards;
+}
+
+/* Responsive Calendar Grid & Day Cells */
+.calendar-grid-cell {
+    min-height: 105px;
+    transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+@media (max-width: 640px) {
+    .calendar-grid-cell {
+        min-height: 75px;
+        padding: 0.375rem;
+    }
+}
+@media (min-width: 1024px) {
+    .calendar-grid-cell {
+        min-height: 120px;
+    }
+}
+
+.calendar-grid-cell:hover {
+    background-color: var(--color-emerald-light);
+}
+
+/* Badge Styles */
+.badge-breakfast {
+    background-color: #fff7ed;
+    color: #c2410c;
+    border: 1px solid #ffedd5;
+}
+.badge-lunch {
+    background-color: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+.badge-dinner {
+    background-color: #eef2ff;
+    color: #4338ca;
+    border: 1px solid #c7d2fe;
+}
+
+/* Toast Container */
+#toastContainer {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 60;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 0.5rem;
+    pointer-events: none;
+}
+
+.toast-item {
+    pointer-events: auto;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Print Styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    body {
+        background: white !important;
+        color: black !important;
+    }
+    .print-container {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+    }
+}

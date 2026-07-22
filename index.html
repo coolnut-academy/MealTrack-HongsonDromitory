@@ -2,8 +2,12 @@
 <html lang="th" class="h-full bg-slate-50">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ระบบจัดเก็บเมนูอาหารกลางวันและนักเรียนพักนอน - โรงเรียนห้องสอนศึกษาฯ</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="Hs_logo_mid.png">
+    <link rel="apple-touch-icon" href="Hs_logo_mid.png">
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -36,46 +40,33 @@
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <style>
-        body { font-family: 'Sarabun', sans-serif; }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(12px);
-        }
-        .modal-backdrop {
-            background: rgba(7, 40, 31, 0.75);
-            backdrop-filter: blur(6px);
-        }
-        /* Printable Stylesheet */
-        @media print {
-            .no-print { display: none !important; }
-            .print-only { display: block !important; }
-            body { background: white !important; color: black !important; }
-            .print-container { width: 100% !important; margin: 0 !important; padding: 0 !important; }
-        }
-    </style>
+    <!-- Custom Modular CSS -->
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="h-full flex flex-col bg-slate-100 text-slate-800 antialiased selection:bg-emerald-700 selection:text-white">
 
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toastContainer"></div>
+
     <!-- PASSCODE LOCK SCREEN MODAL -->
     <div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
-        <div class="glass-panel w-full max-w-md rounded-2xl p-8 shadow-2xl border border-emerald-100 text-center relative overflow-hidden">
+        <div class="glass-panel w-full max-w-md rounded-2xl p-6 sm:p-8 shadow-2xl border border-emerald-100 text-center relative overflow-hidden animate-slide-up">
             <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-emerald-900 via-emerald-700 to-gold-500"></div>
             
-            <img src="https://img1.pic.in.th/images/Hs_logo_mid5d689ab38ed17747.png" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://placehold.co/80x80/0f4c3a/ffffff?text=HS';" alt="ตราโรงเรียนห้องสอนศึกษา" class="w-20 h-20 object-contain mx-auto mb-3 filter drop-shadow-md">
+            <img src="Hs_logo_mid.png" alt="ตราโรงเรียนห้องสอนศึกษา" class="w-20 h-20 object-contain mx-auto mb-3 filter drop-shadow-md">
 
-            <h2 class="text-2xl font-bold text-emerald-850 mb-1">เข้าสู่ระบบจัดเก็บเมนูอาหาร</h2>
-            <p class="text-xs text-gray-500 mb-6">โรงเรียนห้องสอนศึกษาในพระอุปถัมภ์ฯ</p>
+            <h2 class="text-xl sm:text-2xl font-bold text-emerald-850 mb-1">เข้าสู่ระบบจัดเก็บเมนูอาหาร</h2>
+            <p class="text-xs text-slate-500 mb-6">โรงเรียนห้องสอนศึกษาในพระอุปถัมภ์ฯ</p>
 
-            <form id="authForm" onsubmit="handleLogin(event)" class="space-y-4">
+            <form id="authForm" onsubmit="App.handleLogin(event)" class="space-y-4">
                 <div class="relative">
                     <input type="password" id="passcodeInput" required placeholder="กรอกรหัสผ่าน (Passcode)" 
-                        class="w-full pl-4 pr-12 py-3 text-center text-lg tracking-widest rounded-xl border border-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-700 focus:border-transparent bg-white shadow-sm transition">
-                    <button type="button" onclick="togglePasscodeVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-700 p-2 focus:outline-none transition" title="แสดง/ซ่อนรหัสผ่าน">
+                        class="w-full pl-4 pr-12 py-3 text-center text-base sm:text-lg tracking-widest rounded-xl border border-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-700 focus:border-transparent bg-white shadow-sm transition">
+                    <button type="button" onclick="App.togglePasscodeVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-700 p-2 focus:outline-none transition" title="แสดง/ซ่อนรหัสผ่าน">
                         <i id="togglePasscodeIcon" class="fa-solid fa-eye"></i>
                     </button>
                 </div>
-                <div id="authError" class="hidden text-red-600 text-xs font-medium bg-red-50 py-2 rounded-lg border border-red-200">
+                <div id="authError" class="hidden text-red-600 text-xs font-semibold bg-red-50 py-2.5 rounded-xl border border-red-200">
                     <i class="fa-solid fa-circle-exclamation mr-1"></i> รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง
                 </div>
                 <button type="submit" id="loginBtn" class="w-full py-3 bg-emerald-850 hover:bg-emerald-900 text-white font-semibold rounded-xl shadow-lg transition flex items-center justify-center gap-2">
@@ -83,63 +74,78 @@
                     <i class="fa-solid fa-arrow-right"></i>
                 </button>
             </form>
-            <p class="text-[11px] text-gray-400 mt-6">ระบบบันทึกและคำนวณงบประมาณอาหารกลางวันและนักเรียนพักนอน</p>
+            <p class="text-[11px] text-slate-400 mt-6">ระบบบันทึกและคำนวณงบประมาณอาหารกลางวันและนักเรียนพักนอน</p>
         </div>
     </div>
 
     <!-- MAIN NAVIGATION HEADER -->
     <header class="bg-emerald-850 text-white sticky top-0 z-30 shadow-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-2">
             <div class="flex items-center gap-3">
-                <img src="https://img1.pic.in.th/images/Hs_logo_mid5d689ab38ed17747.png" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://placehold.co/40x40/0f4c3a/ffffff?text=HS';" alt="ตราโรงเรียนห้องสอนศึกษา" class="w-10 h-10 object-contain filter drop-shadow">
+                <img src="Hs_logo_mid.png" alt="ตราโรงเรียนห้องสอนศึกษา" class="w-9 h-9 sm:w-10 sm:h-10 object-contain filter drop-shadow">
                 <div>
-                    <h1 class="font-bold text-lg leading-tight">ระบบลงข้อมูลเมนูอาหาร</h1>
-                    <p class="text-xs text-emerald-200">โรงเรียนห้องสอนศึกษาในพระอุปถัมภ์ฯ</p>
+                    <h1 class="font-bold text-base sm:text-lg leading-tight truncate">ระบบลงข้อมูลเมนูอาหาร</h1>
+                    <p class="text-[11px] sm:text-xs text-emerald-200 truncate">โรงเรียนห้องสอนศึกษาในพระอุปถัมภ์ฯ</p>
                 </div>
             </div>
 
-            <div class="flex items-center gap-2 sm:gap-3">
-                <button onclick="openStatsModal()" class="px-3.5 py-2 bg-emerald-700/80 hover:bg-emerald-700 text-white text-xs sm:text-sm font-medium rounded-lg border border-emerald-600/50 transition flex items-center gap-2 shadow-sm">
+            <div class="flex items-center gap-2">
+                <button onclick="Stats.openModal()" class="px-3 py-2 bg-emerald-700/90 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold rounded-xl border border-emerald-600/50 transition flex items-center gap-2 shadow-xs">
                     <i class="fa-solid fa-chart-pie text-gold-400"></i>
-                    <span>สรุปสถิติ & รายงาน</span>
+                    <span class="hidden sm:inline">สรุปสถิติ & รายงาน</span>
+                    <span class="sm:hidden">สถิติ</span>
                 </button>
-                <button onclick="handleLogout()" class="px-3 py-2 bg-emerald-900 hover:bg-red-900 text-emerald-200 hover:text-white text-xs rounded-lg transition" title="ออกจากระบบ">
+                <button onclick="App.handleLogout()" class="px-3 py-2 bg-emerald-950/80 hover:bg-red-800 text-emerald-200 hover:text-white text-xs font-semibold rounded-xl transition flex items-center gap-1.5" title="ออกจากระบบ">
                     <i class="fa-solid fa-right-from-bracket"></i>
+                    <span class="hidden md:inline">ออกจากระบบ</span>
                 </button>
             </div>
         </div>
     </header>
 
     <!-- MAIN CONTENT CONTAINER -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-2 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col gap-4">
+    <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col gap-4">
         
-        <!-- CALENDAR HEADER & MONTH NAVIGATOR -->
-        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 flex flex-wrap items-center justify-between gap-4">
+        <!-- CALENDAR HEADER & MONTH NAVIGATOR BAR -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-850 flex items-center justify-center font-bold text-lg">
+                <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-850 flex items-center justify-center font-bold text-lg border border-emerald-100 shadow-xs">
                     <i class="fa-regular fa-calendar-days"></i>
                 </div>
                 <div>
-                    <h2 id="calendarMonthTitle" class="text-xl font-bold text-slate-800">พฤษภาคม 2569</h2>
-                    <p class="text-xs text-slate-500">คลิกที่ช่องวันที่เพื่อกรอกหรือแก้ไขรายการอาหาร</p>
+                    <h2 id="calendarMonthTitle" class="text-lg sm:text-xl font-bold text-slate-800">พฤษภาคม 2569</h2>
+                    <p class="text-xs text-slate-500 hidden sm:block">คลิกที่ช่องวันที่เพื่อกรอกหรือแก้ไขรายการอาหาร</p>
                 </div>
             </div>
 
-            <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
-                <button onclick="changeMonth(-1)" class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white text-slate-700 shadow-xs transition" title="เดือนก่อนหน้า">
-                    <i class="fa-solid fa-chevron-left"></i>
-                </button>
-                <button onclick="resetToCurrentMonth()" class="px-3 py-1.5 text-xs font-semibold text-emerald-850 hover:bg-white rounded-lg transition">
-                    เดือนปัจจุบัน
-                </button>
-                <button onclick="changeMonth(1)" class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white text-slate-700 shadow-xs transition" title="เดือนถัดไป">
-                    <i class="fa-solid fa-chevron-right"></i>
-                </button>
+            <div class="flex items-center gap-2">
+                <!-- Mobile View Switcher (Grid vs Agenda) -->
+                <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 md:hidden">
+                    <button id="btnMobileViewGrid" onclick="UI.setMobileView('grid')" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-white text-emerald-850 shadow-xs transition" title="มุมมองปฏิทิน">
+                        <i class="fa-solid fa-table-cells"></i>
+                    </button>
+                    <button id="btnMobileViewAgenda" onclick="UI.setMobileView('agenda')" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-500 transition" title="มุมมองรายการ">
+                        <i class="fa-solid fa-list-ul"></i>
+                    </button>
+                </div>
+
+                <!-- Month Nav Buttons -->
+                <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                    <button onclick="changeMonth(-1)" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-slate-700 shadow-xs transition" title="เดือนก่อนหน้า">
+                        <i class="fa-solid fa-chevron-left text-xs"></i>
+                    </button>
+                    <button onclick="resetToCurrentMonth()" class="px-2.5 py-1.5 text-xs font-bold text-emerald-850 hover:bg-white rounded-lg transition">
+                        ปัจจุบัน
+                    </button>
+                    <button onclick="changeMonth(1)" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-slate-700 shadow-xs transition" title="เดือนถัดไป">
+                        <i class="fa-solid fa-chevron-right text-xs"></i>
+                    </button>
+                </div>
             </div>
         </div>
 
-        <!-- CALENDAR GRID -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden flex-1 flex flex-col">
+        <!-- GRID VIEW CONTAINER (Desktop / Tablet / Mobile Grid) -->
+        <div id="calendarGridContainer" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden flex-1 flex flex-col">
             <!-- Days of Week Header -->
             <div class="grid grid-cols-7 bg-slate-50 border-b border-slate-200 text-center py-2.5 text-xs font-bold text-slate-600">
                 <div class="text-red-600">อา.</div>
@@ -152,75 +158,82 @@
             </div>
 
             <!-- Calendar Days Cells -->
-            <div id="calendarGrid" class="grid grid-cols-7 flex-1 auto-rows-fr gap-px bg-slate-200 min-h-[500px]">
+            <div id="calendarGrid" class="grid grid-cols-7 flex-1 auto-rows-fr gap-px bg-slate-200 min-h-[420px] sm:min-h-[520px]">
                 <!-- Dynamic Day Boxes Generated via JavaScript -->
+            </div>
+        </div>
+
+        <!-- AGENDA LIST VIEW CONTAINER (Mobile Optimized View) -->
+        <div id="agendaViewContainer" class="hidden space-y-3">
+            <div id="agendaList" class="space-y-2.5">
+                <!-- Mobile Day Agenda Cards -->
             </div>
         </div>
     </main>
 
     <!-- MEAL ENTRY & EDIT POPUP MODAL -->
     <div id="mealModal" class="fixed inset-0 z-40 hidden flex items-center justify-center p-2 sm:p-4 modal-backdrop overflow-y-auto">
-        <div class="glass-panel w-full max-w-3xl rounded-2xl shadow-2xl border border-slate-200 my-8 overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="glass-panel w-full max-w-3xl rounded-2xl shadow-2xl border border-slate-200 my-4 sm:my-8 overflow-hidden flex flex-col max-h-[92vh] animate-slide-up">
             <!-- Modal Header -->
-            <div class="bg-emerald-850 text-white px-6 py-4 flex items-center justify-between">
+            <div class="bg-emerald-850 text-white px-5 sm:px-6 py-4 flex items-center justify-between">
                 <div>
-                    <h3 id="modalDateTitle" class="font-bold text-lg">รายการอาหารประจำวันที่ 3 พฤษภาคม 2569</h3>
+                    <h3 id="modalDateTitle" class="font-bold text-base sm:text-lg">รายการอาหารประจำวัน</h3>
                     <p class="text-xs text-emerald-200">จัดการเมนูและรายการวัตถุดิบแยกตามมื้อ</p>
                 </div>
-                <button onclick="closeMealModal()" class="w-8 h-8 rounded-full bg-emerald-900/60 hover:bg-emerald-900 flex items-center justify-center text-white transition">
+                <button onclick="MealModal.close()" class="w-8 h-8 rounded-full bg-emerald-950/60 hover:bg-emerald-950 flex items-center justify-center text-white transition">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
 
             <!-- Meal Type Tabs -->
-            <div class="flex border-b border-slate-200 bg-slate-50 px-6 pt-3 gap-2">
-                <button type="button" onclick="switchMealTab('มื้อเช้า')" id="tab-มื้อเช้า" class="meal-tab px-4 py-2 text-sm font-semibold rounded-t-xl border-b-2 border-transparent text-slate-500 hover:text-emerald-850 transition">
-                    🌅 มื้อเช้า
+            <div class="flex border-b border-slate-200 bg-slate-50 px-4 sm:px-6 pt-3 gap-1 sm:gap-2 overflow-x-auto">
+                <button type="button" onclick="MealModal.switchMealTab('มื้อเช้า')" id="tab-มื้อเช้า" class="meal-tab px-3.5 py-2 text-xs sm:text-sm font-bold rounded-t-xl border-b-2 border-transparent text-slate-500 hover:text-emerald-850 transition flex items-center gap-1.5 whitespace-nowrap">
+                    <span>🌅 มื้อเช้า</span>
                 </button>
-                <button type="button" onclick="switchMealTab('มื้อกลางวัน')" id="tab-มื้อกลางวัน" class="meal-tab px-4 py-2 text-sm font-semibold rounded-t-xl border-b-2 border-emerald-850 text-emerald-850 bg-white transition">
-                    ☀️ มื้อกลางวัน (มื้อหลัก)
+                <button type="button" onclick="MealModal.switchMealTab('มื้อกลางวัน')" id="tab-มื้อกลางวัน" class="meal-tab px-3.5 py-2 text-xs sm:text-sm font-bold rounded-t-xl border-b-2 border-emerald-850 text-emerald-850 bg-white transition flex items-center gap-1.5 whitespace-nowrap">
+                    <span>☀️ มื้อกลางวัน (หลัก)</span>
                 </button>
-                <button type="button" onclick="switchMealTab('มื้อเย็น')" id="tab-มื้อเย็น" class="meal-tab px-4 py-2 text-sm font-semibold rounded-t-xl border-b-2 border-transparent text-slate-500 hover:text-emerald-850 transition">
-                    🌙 มื้อเย็น
+                <button type="button" onclick="MealModal.switchMealTab('มื้อเย็น')" id="tab-มื้อเย็น" class="meal-tab px-3.5 py-2 text-xs sm:text-sm font-bold rounded-t-xl border-b-2 border-transparent text-slate-500 hover:text-emerald-850 transition flex items-center gap-1.5 whitespace-nowrap">
+                    <span>🌙 มื้อเย็น</span>
                 </button>
             </div>
 
             <!-- Modal Form Body -->
-            <div class="p-6 overflow-y-auto flex-1 space-y-5">
+            <div class="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4 sm:space-y-5">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">ชื่อเมนูอาหาร</label>
                     <input type="text" id="menuNameInput" placeholder="เช่น แกงเผ็ดลูกชิ้น, ต้มยำไก่, ผัดผักรวม" 
-                        class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-700 bg-slate-50/50 text-sm font-medium">
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-700 bg-slate-50/50 text-sm font-medium transition">
                 </div>
 
                 <!-- Items Table -->
                 <div>
                     <div class="flex items-center justify-between mb-2">
                         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">รายการวัตถุดิบที่ใช้</label>
-                        <button type="button" onclick="addIngredientRow()" class="px-3 py-1 bg-emerald-50 text-emerald-850 hover:bg-emerald-100 text-xs font-semibold rounded-lg border border-emerald-200 transition flex items-center gap-1">
+                        <button type="button" onclick="MealModal.addIngredientRow()" class="px-3 py-1.5 bg-emerald-50 text-emerald-850 hover:bg-emerald-100 text-xs font-bold rounded-lg border border-emerald-200 transition flex items-center gap-1">
                             <i class="fa-solid fa-plus text-xs"></i> เพิ่มรายการ
                         </button>
                     </div>
 
-                    <div class="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-                        <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                    <div class="border border-slate-200 rounded-xl overflow-x-auto shadow-xs">
+                        <table class="w-full text-left border-collapse text-xs sm:text-sm min-w-[500px]">
                             <thead class="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
                                 <tr>
-                                    <th class="py-2.5 px-3 w-12 text-center">ที่</th>
+                                    <th class="py-2.5 px-3 w-10 text-center">ที่</th>
                                     <th class="py-2.5 px-3">รายการ</th>
                                     <th class="py-2.5 px-3 w-20 text-center">จำนวน</th>
-                                    <th class="py-2.5 px-3 w-24 text-center">หน่วยละ</th>
-                                    <th class="py-2.5 px-3 w-24 text-right">เป็นเงิน (บาท)</th>
-                                    <th class="py-2.5 px-3 w-10 text-center"></th>
+                                    <th class="py-2.5 px-3 w-24 text-center">หน่วยละ (฿)</th>
+                                    <th class="py-2.5 px-3 w-24 text-right">รวมเป็นเงิน</th>
+                                    <th class="py-2.5 px-2 w-10 text-center"></th>
                                 </tr>
                             </thead>
                             <tbody id="ingredientsTableBody" class="divide-y divide-slate-100 bg-white">
                                 <!-- Dynamic Rows -->
                             </tbody>
-                            <tfoot class="bg-emerald-50/60 font-bold text-slate-800 border-t border-slate-200">
+                            <tfoot class="bg-emerald-50/70 font-bold text-slate-800 border-t border-slate-200">
                                 <tr>
                                     <td colspan="4" class="py-3 px-4 text-right">รวมเป็นเงินมื้อนี้:</td>
-                                    <td id="mealTotalCostDisplay" class="py-3 px-3 text-right text-emerald-850 font-bold text-base">0.00</td>
+                                    <td id="mealTotalCostDisplay" class="py-3 px-3 text-right text-emerald-850 font-bold text-sm sm:text-base">0.00</td>
                                     <td></td>
                                 </tr>
                             </tfoot>
@@ -230,16 +243,16 @@
             </div>
 
             <!-- Modal Footer -->
-            <div class="bg-slate-100 px-6 py-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200">
-                <button type="button" onclick="deleteCurrentMealRecord()" class="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-semibold transition flex items-center gap-1">
-                    <i class="fa-solid fa-trash"></i> ลบข้อมูลมื้อนี้
+            <div class="bg-slate-100 px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200">
+                <button type="button" onclick="MealModal.deleteRecord()" class="px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-semibold transition flex items-center gap-1">
+                    <i class="fa-solid fa-trash-can"></i> <span>ลบข้อมูลมื้อนี้</span>
                 </button>
                 <div class="flex items-center gap-2">
-                    <button type="button" onclick="closeMealModal()" class="px-4 py-2 bg-white hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-semibold transition">
+                    <button type="button" onclick="MealModal.close()" class="px-4 py-2 bg-white hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-semibold transition">
                         ยกเลิก
                     </button>
-                    <button type="button" onclick="saveCurrentMealRecord()" class="px-5 py-2 bg-emerald-850 hover:bg-emerald-900 text-white rounded-xl text-xs font-semibold shadow-md transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูล
+                    <button type="button" onclick="MealModal.saveRecord()" class="px-5 py-2 bg-emerald-850 hover:bg-emerald-900 text-white rounded-xl text-xs font-semibold shadow-md transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-floppy-disk"></i> <span>บันทึกข้อมูล</span>
                     </button>
                 </div>
             </div>
@@ -248,81 +261,82 @@
 
     <!-- STATISTICS & REPORT MODAL -->
     <div id="statsModal" class="fixed inset-0 z-40 hidden flex items-center justify-center p-2 sm:p-4 modal-backdrop overflow-y-auto">
-        <div class="glass-panel w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 my-8 overflow-hidden flex flex-col max-h-[90vh]">
-            <div class="bg-emerald-850 text-white px-6 py-4 flex items-center justify-between no-print">
-                <div class="flex items-center gap-2">
+        <div class="glass-panel w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 my-4 sm:my-8 overflow-hidden flex flex-col max-h-[92vh] animate-slide-up">
+            <div class="bg-emerald-850 text-white px-5 sm:px-6 py-4 flex items-center justify-between no-print">
+                <div class="flex items-center gap-2.5">
                     <i class="fa-solid fa-chart-line text-gold-400 text-xl"></i>
                     <div>
-                        <h3 class="font-bold text-lg">สรุปสถิติ & รายงานงบประมาณ</h3>
+                        <h3 class="font-bold text-base sm:text-lg">สรุปสถิติ & รายงานงบประมาณ</h3>
                         <p class="text-xs text-emerald-200">คำนวณและเปรียบเทียบค่าใช้จ่ายจริงกับงบประมาณจัดสรร</p>
                     </div>
                 </div>
-                <button onclick="closeStatsModal()" class="w-8 h-8 rounded-full bg-emerald-900/60 hover:bg-emerald-900 flex items-center justify-center text-white transition">
+                <button onclick="Stats.closeModal()" class="w-8 h-8 rounded-full bg-emerald-950/60 hover:bg-emerald-950 flex items-center justify-center text-white transition">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
 
             <!-- Filter Bar -->
-            <div class="bg-slate-100 p-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 no-print">
-                <div class="flex flex-wrap items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-200">
-                    <button onclick="setFilterRange('today')" class="filter-btn px-3 py-1.5 text-xs font-medium rounded-lg hover:bg-slate-100 transition">วันนี้</button>
-                    <button onclick="setFilterRange('week')" class="filter-btn px-3 py-1.5 text-xs font-medium rounded-lg hover:bg-slate-100 transition">สัปดาห์นี้</button>
-                    <button onclick="setFilterRange('month')" class="filter-btn px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-850 text-white transition">เดือนนี้</button>
-                    <button onclick="setFilterRange('year')" class="filter-btn px-3 py-1.5 text-xs font-medium rounded-lg hover:bg-slate-100 transition">ปีนี้</button>
+            <div class="bg-slate-100 p-3 sm:p-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 no-print">
+                <div class="flex flex-wrap items-center gap-1 bg-white p-1 rounded-xl border border-slate-200">
+                    <button id="filter-btn-today" onclick="Stats.setFilterRange('today')" class="filter-btn px-3 py-1.5 text-xs font-medium rounded-lg hover:bg-slate-100 transition">วันนี้</button>
+                    <button id="filter-btn-week" onclick="Stats.setFilterRange('week')" class="filter-btn px-3 py-1.5 text-xs font-medium rounded-lg hover:bg-slate-100 transition">สัปดาห์นี้</button>
+                    <button id="filter-btn-month" onclick="Stats.setFilterRange('month')" class="filter-btn px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-850 text-white transition">เดือนนี้</button>
+                    <button id="filter-btn-year" onclick="Stats.setFilterRange('year')" class="filter-btn px-3 py-1.5 text-xs font-medium rounded-lg hover:bg-slate-100 transition">ปีนี้</button>
                 </div>
 
-                <div class="flex items-center gap-2">
-                    <input type="date" id="statsStartDate" onchange="customDateChanged()" class="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs bg-white">
-                    <span class="text-slate-400 text-xs">ถึง</span>
-                    <input type="date" id="statsEndDate" onchange="customDateChanged()" class="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs bg-white">
+                <div class="flex items-center gap-2 text-xs">
+                    <input type="date" id="statsStartDate" onchange="calculateAndRenderStats()" class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white">
+                    <span class="text-slate-400">ถึง</span>
+                    <input type="date" id="statsEndDate" onchange="calculateAndRenderStats()" class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white">
                 </div>
             </div>
 
-            <!-- Report Details Body -->
-            <div id="printReportArea" class="p-6 overflow-y-auto flex-1 space-y-6">
-                <div class="text-center pb-4 border-b border-slate-200">
-                    <h2 class="font-bold text-xl text-emerald-850">รายงานสรุปค่าใช้จ่ายวัตถุดิบประกอบอาหาร</h2>
+            <!-- Printable Report Details Area -->
+            <div id="printReportArea" class="p-5 sm:p-6 overflow-y-auto flex-1 space-y-6 print-container">
+                <div class="text-center pb-4 border-b border-slate-200 flex flex-col items-center">
+                    <img src="Hs_logo_mid.png" alt="ตราโรงเรียนห้องสอนศึกษา" class="w-16 h-16 object-contain mb-2">
+                    <h2 class="font-bold text-lg sm:text-xl text-emerald-850">รายงานสรุปค่าใช้จ่ายวัตถุดิบประกอบอาหาร</h2>
                     <p class="text-xs text-slate-600">โรงเรียนห้องสอนศึกษาในพระอุปถัมภ์ฯ อำเภอเมือง จังหวัดแม่ฮ่องสอน</p>
                     <p id="reportRangeLabel" class="text-xs font-semibold text-emerald-700 mt-1">ประจำช่วงวันที่ ...</p>
                 </div>
 
-                <!-- Cards Grid -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center">
+                <!-- Cards Summary Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center shadow-xs">
                         <p class="text-xs font-bold text-slate-500 uppercase">ค่าวัตถุดิบใช้จริงรวม</p>
-                        <p id="statTotalSpent" class="text-2xl font-bold text-emerald-850 my-1">0.00</p>
+                        <p id="statTotalSpent" class="text-xl sm:text-2xl font-bold text-emerald-850 my-1">0.00</p>
                         <p class="text-[11px] text-slate-500">บาท</p>
                     </div>
 
-                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center shadow-xs">
                         <p class="text-xs font-bold text-slate-500 uppercase">จำนวนวันที่บันทึก</p>
-                        <p id="statDaysCount" class="text-2xl font-bold text-slate-800 my-1">0</p>
+                        <p id="statDaysCount" class="text-xl sm:text-2xl font-bold text-slate-800 my-1">0</p>
                         <p class="text-[11px] text-slate-500">วัน</p>
                     </div>
 
-                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center shadow-xs">
                         <p class="text-xs font-bold text-slate-500 uppercase">งบประมาณประมาณการจัดสรร</p>
-                        <p id="statAllocatedBudget" class="text-2xl font-bold text-gold-600 my-1">0.00</p>
+                        <p id="statAllocatedBudget" class="text-xl sm:text-2xl font-bold text-gold-600 my-1">0.00</p>
                         <p class="text-[11px] text-slate-500">บาท (ตามเกณฑ์อัตราหัวละ)</p>
                     </div>
                 </div>
 
                 <!-- Breakdown by Meal -->
-                <div class="bg-white rounded-xl border border-slate-200 p-4">
-                    <h4 class="font-bold text-sm text-slate-800 mb-3 border-b border-slate-100 pb-2">
+                <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+                    <h4 class="font-bold text-xs sm:text-sm text-slate-800 mb-3 border-b border-slate-100 pb-2">
                         <i class="fa-solid fa-utensils text-emerald-700 mr-1.5"></i> สรุปสัดส่วนค่าใช้จ่ายแยกตามมื้ออาหาร
                     </h4>
-                    <div class="grid grid-cols-3 gap-2 text-center text-xs">
-                        <div class="p-3 rounded-lg bg-orange-50 border border-orange-100">
-                            <span class="text-orange-700 font-semibold">🌅 มื้อเช้า</span>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-center text-xs">
+                        <div class="p-3 rounded-xl bg-orange-50 border border-orange-100">
+                            <span class="text-orange-800 font-bold">🌅 มื้อเช้า</span>
                             <p id="statBreakfastSpent" class="font-bold text-sm text-slate-800 mt-1">0.00 บาท</p>
                         </div>
-                        <div class="p-3 rounded-lg bg-amber-50 border border-amber-100">
-                            <span class="text-amber-800 font-semibold">☀️ มื้อกลางวัน</span>
+                        <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-100">
+                            <span class="text-emerald-800 font-bold">☀️ มื้อกลางวัน</span>
                             <p id="statLunchSpent" class="font-bold text-sm text-slate-800 mt-1">0.00 บาท</p>
                         </div>
-                        <div class="p-3 rounded-lg bg-indigo-50 border border-indigo-100">
-                            <span class="text-indigo-800 font-semibold">🌙 มื้อเย็น</span>
+                        <div class="p-3 rounded-xl bg-indigo-50 border border-indigo-100">
+                            <span class="text-indigo-800 font-bold">🌙 มื้อเย็น</span>
                             <p id="statDinnerSpent" class="font-bold text-sm text-slate-800 mt-1">0.00 บาท</p>
                         </div>
                     </div>
@@ -330,545 +344,29 @@
             </div>
 
             <!-- Modal Footer Export Options -->
-            <div class="bg-slate-100 px-6 py-4 flex items-center justify-between border-t border-slate-200 no-print">
-                <button type="button" onclick="closeStatsModal()" class="px-4 py-2 bg-white text-slate-700 border border-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-200 transition">
+            <div class="bg-slate-100 px-4 sm:px-6 py-3.5 flex items-center justify-between border-t border-slate-200 no-print">
+                <button type="button" onclick="Stats.closeModal()" class="px-4 py-2 bg-white text-slate-700 border border-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-200 transition">
                     ปิดหน้าต่าง
                 </button>
                 <div class="flex items-center gap-2">
-                    <button type="button" onclick="exportToCSV()" class="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-850 border border-emerald-300 rounded-xl text-xs font-semibold transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-file-csv"></i> Export .CSV
+                    <button type="button" onclick="Stats.exportToCSV()" class="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-850 border border-emerald-300 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-csv"></i> <span>Export CSV</span>
                     </button>
-                    <button type="button" onclick="window.print()" class="px-5 py-2 bg-emerald-850 hover:bg-emerald-900 text-white rounded-xl text-xs font-semibold shadow-md transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-print"></i> พิมพ์รายงาน (PDF)
+                    <button type="button" onclick="window.print()" class="px-4 py-2 bg-emerald-850 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-print"></i> <span>พิมพ์ PDF</span>
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
-        // =================================================================
-        // GLOBAL STATE & API CONFIG
-        // =================================================================
-        const API_URL = "https://script.google.com/macros/s/AKfycbzMGut0MDH3rNl_toe3mhuow70CoUx4HxXjqpIXqJNfBKD7tqE00uGPTMfX9qQOpKhS/exec";
-        
-        let currentYear = 2026;
-        let currentMonth = 5; // พฤษภาคม (Month index 5 = May)
-        let monthData = {}; // Local Cache: { "2026-05-03": { "มื้อเช้า": {...}, "มื้อกลางวัน": {...} } }
-        
-        let selectedDateStr = "";
-        let selectedMealType = "มื้อกลางวัน";
-        let activeRecord = null;
-
-        const THAI_MONTHS = [
-            "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
-            "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
-        ];
-
-        // =================================================================
-        // INIT & AUTHENTICATION
-        // =================================================================
-        window.onload = function () {
-            checkAuthSession();
-        };
-
-        function checkAuthSession() {
-            const savedAuth = localStorage.getItem('meal_tracker_auth');
-            if (savedAuth === 'true') {
-                document.getElementById('authModal').classList.add('hidden');
-                loadCalendarView();
-            } else {
-                document.getElementById('authModal').classList.remove('hidden');
-            }
-        }
-
-        function togglePasscodeVisibility() {
-            const input = document.getElementById('passcodeInput');
-            const icon = document.getElementById('togglePasscodeIcon');
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            } else {
-                input.type = 'password';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-            }
-        }
-
-        async function handleLogin(e) {
-            e.preventDefault();
-            const passcode = document.getElementById('passcodeInput').value;
-            const btn = document.getElementById('loginBtn');
-            const errDiv = document.getElementById('authError');
-
-            btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> ตรวจสอบรหัส...`;
-            errDiv.classList.add('hidden');
-
-            try {
-                const res = await callAPI('verify_passcode', { passcode });
-                if (res && res.success) {
-                    localStorage.setItem('meal_tracker_auth', 'true');
-                    document.getElementById('authModal').classList.add('hidden');
-                    loadCalendarView();
-                } else {
-                    errDiv.classList.remove('hidden');
-                }
-            } catch (err) {
-                // Offline fallback if API fails or offline
-                if (passcode === "Hongson1234" || passcode === "admin") {
-                    localStorage.setItem('meal_tracker_auth', 'true');
-                    document.getElementById('authModal').classList.add('hidden');
-                    loadCalendarView();
-                } else {
-                    errDiv.classList.remove('hidden');
-                }
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = `<span>ยืนยันเข้าสู่ระบบ</span> <i class="fa-solid fa-arrow-right"></i>`;
-            }
-        }
-
-        function handleLogout() {
-            localStorage.removeItem('meal_tracker_auth');
-            document.getElementById('authModal').classList.remove('hidden');
-            document.getElementById('passcodeInput').value = '';
-        }
-
-        // =================================================================
-        // CALENDAR VIEW LOGIC
-        // =================================================================
-        async function loadCalendarView() {
-            updateCalendarHeaderTitle();
-            renderEmptyCalendarGrid();
-            
-            // Fetch month records from API
-            try {
-                const res = await callAPI('get_month_data', { year: currentYear, month: currentMonth });
-                if (res && res.success && res.data) {
-                    organizeMonthDataCache(res.data);
-                }
-            } catch (err) {
-                console.warn("Using offline / cached calendar data:", err);
-            }
-            renderCalendarGrid();
-        }
-
-        function updateCalendarHeaderTitle() {
-            const thaiYear = currentYear + 543;
-            document.getElementById('calendarMonthTitle').innerText = `${THAI_MONTHS[currentMonth - 1]} ${thaiYear}`;
-        }
-
-        function changeMonth(delta) {
-            currentMonth += delta;
-            if (currentMonth > 12) {
-                currentMonth = 1;
-                currentYear++;
-            } else if (currentMonth < 1) {
-                currentMonth = 12;
-                currentYear--;
-            }
-            loadCalendarView();
-        }
-
-        function resetToCurrentMonth() {
-            const now = new Date();
-            currentYear = now.getFullYear();
-            currentMonth = now.getMonth() + 1;
-            loadCalendarView();
-        }
-
-        function organizeMonthDataCache(recordsArray) {
-            monthData = {};
-            recordsArray.forEach(rec => {
-                if (!monthData[rec.date]) {
-                    monthData[rec.date] = {};
-                }
-                monthData[rec.date][rec.meal_type] = rec;
-            });
-        }
-
-        function renderEmptyCalendarGrid() {
-            const grid = document.getElementById('calendarGrid');
-            grid.innerHTML = '<div class="col-span-7 p-12 text-center text-slate-400 font-medium"><i class="fa-solid fa-spinner animate-spin mr-2"></i> กำลังโหลดปฏิทิน...</div>';
-        }
-
-        function renderCalendarGrid() {
-            const grid = document.getElementById('calendarGrid');
-            grid.innerHTML = '';
-
-            const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay(); // 0 = Sun
-            const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
-
-            // Previous month padding cells
-            for (let i = 0; i < firstDay; i++) {
-                const padCell = document.createElement('div');
-                padCell.className = 'bg-slate-50/50 min-h-[90px] p-1.5 opacity-40 cursor-not-allowed';
-                grid.appendChild(padCell);
-            }
-
-            // Current month day cells
-            for (let day = 1; day <= daysInMonth; day++) {
-                const dayStr = day < 10 ? '0' + day : '' + day;
-                const monthStr = currentMonth < 10 ? '0' + currentMonth : '' + currentMonth;
-                const fullDateStr = `${currentYear}-${monthStr}-${dayStr}`;
-
-                const dayCell = document.createElement('div');
-                dayCell.className = 'bg-white min-h-[95px] sm:min-h-[110px] p-2 flex flex-col justify-between hover:bg-emerald-50/30 transition cursor-pointer group relative border-t border-l border-slate-100';
-                dayCell.onclick = () => openMealModalForDate(fullDateStr);
-
-                // Day number badge
-                const dayHeader = document.createElement('div');
-                dayHeader.className = 'flex items-center justify-between';
-                
-                const dayNum = document.createElement('span');
-                dayNum.className = 'text-xs sm:text-sm font-bold text-slate-700 group-hover:text-emerald-850';
-                dayNum.innerText = day;
-                dayHeader.appendChild(dayNum);
-
-                // Check entries
-                const dayEntries = monthData[fullDateStr] || {};
-                const hasLunch = !!dayEntries['มื้อกลางวัน'];
-                const hasBreakfast = !!dayEntries['มื้อเช้า'];
-                const hasDinner = !!dayEntries['มื้อเย็น'];
-
-                const contentBox = document.createElement('div');
-                contentBox.className = 'mt-1 space-y-1';
-
-                if (hasLunch) {
-                    const lunchRec = dayEntries['มื้อกลางวัน'];
-                    const badge = document.createElement('div');
-                    badge.className = 'bg-emerald-100 text-emerald-900 border border-emerald-300 rounded px-1.5 py-0.5 text-[10px] sm:text-xs font-medium truncate';
-                    badge.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 mr-1"></i> ${lunchRec.menu_name || 'มื้อกลางวัน'}`;
-                    contentBox.appendChild(badge);
-                }
-
-                if (hasBreakfast || hasDinner) {
-                    const extraBadge = document.createElement('div');
-                    extraBadge.className = 'text-[9px] text-slate-500 font-medium pl-1';
-                    let extraText = [];
-                    if (hasBreakfast) extraText.push('เช้า');
-                    if (hasDinner) extraText.push('เย็น');
-                    extraBadge.innerText = `+${extraText.join('/')}`;
-                    contentBox.appendChild(extraBadge);
-                }
-
-                // Hover Preview Tooltip
-                if (hasLunch || hasBreakfast || hasDinner) {
-                    const tooltip = document.createElement('div');
-                    tooltip.className = 'hidden group-hover:block absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-48 p-2.5 bg-slate-900 text-white text-[11px] rounded-xl shadow-xl z-20 pointer-events-none';
-                    let tooltipHTML = `<div class="font-bold text-emerald-300 mb-1 border-b border-slate-700 pb-1">${day} ${THAI_MONTHS[currentMonth-1]}</div>`;
-                    
-                    if (hasLunch) tooltipHTML += `<div><b>กลางวัน:</b> ${dayEntries['มื้อกลางวัน'].menu_name || '-'} (${dayEntries['มื้อกลางวัน'].total_cost}บ.)</div>`;
-                    if (hasBreakfast) tooltipHTML += `<div><b>เช้า:</b> ${dayEntries['มื้อเช้า'].menu_name || '-'}</div>`;
-                    if (hasDinner) tooltipHTML += `<div><b>เย็น:</b> ${dayEntries['มื้อเย็น'].menu_name || '-'}</div>`;
-
-                    tooltip.innerHTML = tooltipHTML;
-                    dayCell.appendChild(tooltip);
-                }
-
-                dayCell.appendChild(dayHeader);
-                dayCell.appendChild(contentBox);
-                grid.appendChild(dayCell);
-            }
-        }
-
-        // =================================================================
-        // MEAL FORM MODAL LOGIC
-        // =================================================================
-        function openMealModalForDate(dateStr) {
-            selectedDateStr = dateStr;
-            const parts = dateStr.split('-');
-            const yearThai = parseInt(parts[0]) + 543;
-            const monthThai = THAI_MONTHS[parseInt(parts[1]) - 1];
-            const dayNum = parseInt(parts[2]);
-
-            document.getElementById('modalDateTitle').innerText = `รายการอาหารประจำวันที่ ${dayNum} ${monthThai} ${yearThai}`;
-            
-            selectedMealType = "มื้อกลางวัน"; // Default tab
-            switchMealTab(selectedMealType);
-
-            document.getElementById('mealModal').classList.remove('hidden');
-        }
-
-        function closeMealModal() {
-            document.getElementById('mealModal').classList.add('hidden');
-        }
-
-        function switchMealTab(mealType) {
-            selectedMealType = mealType;
-
-            // Highlight Tab Buttons
-            document.querySelectorAll('.meal-tab').forEach(btn => {
-                btn.classList.remove('border-emerald-850', 'text-emerald-850', 'bg-white');
-                btn.classList.add('border-transparent', 'text-slate-500');
-            });
-            const activeTab = document.getElementById(`tab-${mealType}`);
-            if (activeTab) {
-                activeTab.classList.remove('border-transparent', 'text-slate-500');
-                activeTab.classList.add('border-emerald-850', 'text-emerald-850', 'bg-white');
-            }
-
-            // Load Existing Record for this Date and Meal
-            const dayEntries = monthData[selectedDateStr] || {};
-            activeRecord = dayEntries[mealType] || {
-                date: selectedDateStr,
-                meal_type: mealType,
-                menu_name: "",
-                items: [
-                    { item: "ข้าวสาร", qty: 12, price: 35, total: 420 },
-                    { item: "", qty: 1, price: 0, total: 0 }
-                ],
-                total_cost: 420,
-                status: "DRAFT"
-            };
-
-            document.getElementById('menuNameInput').value = activeRecord.menu_name || "";
-            renderIngredientsRows(activeRecord.items || []);
-        }
-
-        function renderIngredientsRows(itemsArray) {
-            const tbody = document.getElementById('ingredientsTableBody');
-            tbody.innerHTML = '';
-
-            itemsArray.forEach((row, idx) => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-50 transition';
-                tr.innerHTML = `
-                    <td class="py-2 px-3 text-center text-slate-400 font-medium">${idx + 1}</td>
-                    <td class="py-2 px-2">
-                        <input type="text" value="${escapeHtml(row.item || '')}" onchange="updateItemRow(${idx}, 'item', this.value)" placeholder="ชื่อวัตถุดิบ" class="w-full px-2 py-1 rounded border border-slate-200 text-xs focus:ring-1 focus:ring-emerald-700">
-                    </td>
-                    <td class="py-2 px-2">
-                        <input type="number" step="any" value="${row.qty !== undefined ? row.qty : 1}" onchange="updateItemRow(${idx}, 'qty', this.value)" class="w-full px-2 py-1 rounded border border-slate-200 text-xs text-center focus:ring-1 focus:ring-emerald-700">
-                    </td>
-                    <td class="py-2 px-2">
-                        <input type="number" step="any" value="${row.price !== undefined ? row.price : 0}" onchange="updateItemRow(${idx}, 'price', this.value)" class="w-full px-2 py-1 rounded border border-slate-200 text-xs text-center focus:ring-1 focus:ring-emerald-700">
-                    </td>
-                    <td class="py-2 px-3 text-right font-semibold text-slate-700">
-                        ${(row.total || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </td>
-                    <td class="py-2 px-2 text-center">
-                        <button type="button" onclick="removeIngredientRow(${idx})" class="text-slate-400 hover:text-red-600 transition p-1">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            calculateMealGrandTotal();
-        }
-
-        function updateItemRow(index, field, value) {
-            if (!activeRecord.items) activeRecord.items = [];
-            
-            if (field === 'qty' || field === 'price') {
-                activeRecord.items[index][field] = parseFloat(value) || 0;
-            } else {
-                activeRecord.items[index][field] = value;
-            }
-
-            const q = activeRecord.items[index].qty || 0;
-            const p = activeRecord.items[index].price || 0;
-            activeRecord.items[index].total = q * p;
-
-            renderIngredientsRows(activeRecord.items);
-        }
-
-        function addIngredientRow() {
-            if (!activeRecord.items) activeRecord.items = [];
-            activeRecord.items.push({ item: "", qty: 1, price: 0, total: 0 });
-            renderIngredientsRows(activeRecord.items);
-        }
-
-        function removeIngredientRow(index) {
-            if (activeRecord.items && activeRecord.items.length > index) {
-                activeRecord.items.splice(index, 1);
-                renderIngredientsRows(activeRecord.items);
-            }
-        }
-
-        function calculateMealGrandTotal() {
-            let grandTotal = 0;
-            if (activeRecord && activeRecord.items) {
-                grandTotal = activeRecord.items.reduce((sum, item) => sum + (item.total || 0), 0);
-            }
-            if (activeRecord) activeRecord.total_cost = grandTotal;
-            document.getElementById('mealTotalCostDisplay').innerText = grandTotal.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        }
-
-        async function saveCurrentMealRecord() {
-            if (!activeRecord) return;
-
-            activeRecord.menu_name = document.getElementById('menuNameInput').value;
-            activeRecord.status = "COMPLETE";
-
-            // Save to Local Cache
-            if (!monthData[selectedDateStr]) monthData[selectedDateStr] = {};
-            monthData[selectedDateStr][selectedMealType] = activeRecord;
-
-            renderCalendarGrid();
-            closeMealModal();
-
-            // Sync with Google Sheets API
-            try {
-                await callAPI('save_meal_record', { record: activeRecord });
-            } catch (err) {
-                console.warn("Saved locally, sync failed:", err);
-            }
-        }
-
-        async function deleteCurrentMealRecord() {
-            if (!monthData[selectedDateStr] || !monthData[selectedDateStr][selectedMealType]) {
-                closeMealModal();
-                return;
-            }
-
-            delete monthData[selectedDateStr][selectedMealType];
-            renderCalendarGrid();
-            closeMealModal();
-
-            try {
-                await callAPI('delete_meal_record', { date: selectedDateStr, meal_type: selectedMealType });
-            } catch (err) {
-                console.warn("Deleted locally, sync failed:", err);
-            }
-        }
-
-        // =================================================================
-        // STATISTICS & FILTER REPORT LOGIC
-        // =================================================================
-        function openStatsModal() {
-            setFilterRange('month');
-            document.getElementById('statsModal').classList.remove('hidden');
-        }
-
-        function closeStatsModal() {
-            document.getElementById('statsModal').classList.add('hidden');
-        }
-
-        function setFilterRange(type) {
-            const now = new Date();
-            let start = new Date();
-            let end = new Date();
-
-            if (type === 'today') {
-                // start & end = today
-            } else if (type === 'week') {
-                const day = now.getDay();
-                start.setDate(now.getDate() - day);
-                end.setDate(now.getDate() + (6 - day));
-            } else if (type === 'month') {
-                start = new Date(currentYear, currentMonth - 1, 1);
-                end = new Date(currentYear, currentMonth, 0);
-            } else if (type === 'year') {
-                start = new Date(currentYear, 0, 1);
-                end = new Date(currentYear, 11, 31);
-            }
-
-            document.getElementById('statsStartDate').value = formatDateISO(start);
-            document.getElementById('statsEndDate').value = formatDateISO(end);
-
-            calculateAndRenderStats();
-        }
-
-        function customDateChanged() {
-            calculateAndRenderStats();
-        }
-
-        function calculateAndRenderStats() {
-            const sDate = document.getElementById('statsStartDate').value;
-            const eDate = document.getElementById('statsEndDate').value;
-
-            document.getElementById('reportRangeLabel').innerText = `ประจำช่วงวันที่ ${sDate} ถึง ${eDate}`;
-
-            let totalSpent = 0;
-            let breakfastSpent = 0;
-            let lunchSpent = 0;
-            let dinnerSpent = 0;
-            let recordedDaysSet = new Set();
-
-            Object.keys(monthData).forEach(dStr => {
-                if ((!sDate || dStr >= sDate) && (!eDate || dStr <= eDate)) {
-                    const dayObj = monthData[dStr];
-                    Object.keys(dayObj).forEach(mealKey => {
-                        const rec = dayObj[mealKey];
-                        const cost = rec.total_cost || 0;
-                        totalSpent += cost;
-                        recordedDaysSet.add(dStr);
-
-                        if (mealKey === 'มื้อเช้า') breakfastSpent += cost;
-                        if (mealKey === 'มื้อกลางวัน') lunchSpent += cost;
-                        if (mealKey === 'มื้อเย็น') dinnerSpent += cost;
-                    });
-                }
-            });
-
-            const daysCount = recordedDaysSet.size;
-            // Formula Budget: M.1-3 (86*40) + M.4-6 (39*60) = 3,440 + 2,340 = 5,780 THB/day
-            const estimatedBudget = daysCount * (86 * 40 + 39 * 60);
-
-            document.getElementById('statTotalSpent').innerText = totalSpent.toLocaleString('th-TH', { minimumFractionDigits: 2 });
-            document.getElementById('statDaysCount').innerText = daysCount;
-            document.getElementById('statAllocatedBudget').innerText = estimatedBudget.toLocaleString('th-TH', { minimumFractionDigits: 2 });
-
-            document.getElementById('statBreakfastSpent').innerText = `${breakfastSpent.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท`;
-            document.getElementById('statLunchSpent').innerText = `${lunchSpent.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท`;
-            document.getElementById('statDinnerSpent').innerText = `${dinnerSpent.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท`;
-        }
-
-        function exportToCSV() {
-            let csvContent = "\uFEFFวันที่,มื้ออาหาร,ชื่อเมนู,ยอดรวมเงิน (บาท)\n";
-
-            Object.keys(monthData).forEach(dStr => {
-                const dayObj = monthData[dStr];
-                Object.keys(dayObj).forEach(mKey => {
-                    const rec = dayObj[mKey];
-                    csvContent += `"${rec.date}","${rec.meal_type}","${rec.menu_name || ''}",${rec.total_cost || 0}\n`;
-                });
-            });
-
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", `Meal_Summary_${currentYear}_${currentMonth}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        // =================================================================
-        // UTILITY & API HELPER FUNCTIONS
-        // =================================================================
-        async function callAPI(action, payload = {}) {
-            payload.action = action;
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify(payload)
-            });
-            return await response.json();
-        }
-
-        function formatDateISO(d) {
-            const year = d.getFullYear();
-            const month = (d.getMonth() + 1).toString().padStart(2, '0');
-            const day = d.getDate().toString().padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-
-        function escapeHtml(text) {
-            if (!text) return "";
-            return text.toString()
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        }
-    </script>
+    <!-- Application Script Modules -->
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/calendar.js"></script>
+    <script src="js/mealModal.js"></script>
+    <script src="js/stats.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
