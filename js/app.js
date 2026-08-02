@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 const App = {
     init() {
+        API.warmUp(); // Pre-warm GAS to reduce cold-start delay
         this.checkAuthSession();
     },
 

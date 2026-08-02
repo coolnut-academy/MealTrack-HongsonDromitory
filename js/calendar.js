@@ -1,18 +1,51 @@
 /**
  * Calendar Logic (Grid view & Mobile Agenda view)
  */
-let currentYear = 2026;
-let currentMonth = 5; // May
+const _now = new Date();
+let currentYear = _now.getFullYear();
+let currentMonth = _now.getMonth() + 1; // 1-indexed (Jan=1 ... Dec=12)
 let monthData = {}; // Cache: { "YYYY-MM-DD": { "มื้อเช้า": record, "มื้อกลางวัน": record, "มื้อเย็น": record } }
+
+/** LocalStorage cache helpers — show data instantly while API loads */
+function _cacheKey() { return `meal_cache_${currentYear}_${currentMonth}`; }
+
+function _loadFromLocalCache() {
+    try {
+        const raw = localStorage.getItem(_cacheKey());
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object') return parsed;
+        }
+    } catch (_) { /* ignore corrupt cache */ }
+    return null;
+}
+
+function _saveToLocalCache() {
+    try {
+        localStorage.setItem(_cacheKey(), JSON.stringify(monthData));
+    } catch (_) { /* storage full — silently skip */ }
+}
 
 async function loadCalendarView() {
     updateCalendarHeaderTitle();
-    renderEmptyCalendarGrid();
 
+    // 1) Show cached data instantly (if available)
+    const cached = _loadFromLocalCache();
+    if (cached && Object.keys(cached).length > 0) {
+        monthData = cached;
+        renderCalendarGrid();
+        renderMobileAgendaView();
+        calculateAndRenderStats();
+    } else {
+        renderEmptyCalendarGrid();
+    }
+
+    // 2) Fetch fresh data from Google Sheets in background
     try {
         const res = await API.getMonthData(currentYear, currentMonth);
         if (res && res.success && Array.isArray(res.data)) {
             organizeMonthDataCache(res.data);
+            _saveToLocalCache();
         }
     } catch (err) {
         console.warn("Using offline / cached calendar data:", err);
@@ -20,7 +53,7 @@ async function loadCalendarView() {
 
     renderCalendarGrid();
     renderMobileAgendaView();
-    calculateAndRenderStats(); // Update quick stats if visible
+    calculateAndRenderStats();
 }
 
 function updateCalendarHeaderTitle() {

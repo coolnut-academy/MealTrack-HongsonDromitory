@@ -2,17 +2,31 @@
  * Google Sheets API Handler & Safe Data Parser
  */
 const API = {
+    /** Pre-warm GAS to avoid cold-start delay on actual data requests */
+    warmUp() {
+        fetch(CONFIG.API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'ping' })
+        }).catch(() => {});
+    },
+
     async call(action, payload = {}) {
         payload.action = action;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 12000); // 12s timeout
         try {
             const response = await fetch(CONFIG.API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
+                signal: controller.signal
             });
+            clearTimeout(timeoutId);
             const data = await response.json();
             return data;
         } catch (err) {
+            clearTimeout(timeoutId);
             console.error(`[API Error] ${action}:`, err);
             throw err;
         }

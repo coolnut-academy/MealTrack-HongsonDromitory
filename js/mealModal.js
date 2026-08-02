@@ -154,6 +154,7 @@ const MealModal = {
         // Save to Local Cache immediately for fast UI feedback
         if (!monthData[this.selectedDateStr]) monthData[this.selectedDateStr] = {};
         monthData[this.selectedDateStr][this.selectedMealType] = JSON.parse(JSON.stringify(this.activeRecord));
+        _saveToLocalCache();
 
         renderCalendarGrid();
         renderMobileAgendaView();
@@ -183,6 +184,7 @@ const MealModal = {
         }
 
         delete monthData[this.selectedDateStr][this.selectedMealType];
+        _saveToLocalCache();
 
         renderCalendarGrid();
         renderMobileAgendaView();
