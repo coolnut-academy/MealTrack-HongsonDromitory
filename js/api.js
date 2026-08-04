@@ -71,5 +71,24 @@ const API = {
 
     async deleteMealRecord(date, mealType) {
         return await this.call('delete_meal_record', { date, meal_type: mealType });
+    },
+
+    async getStandardPrices(year, month) {
+        try {
+            const res = await this.call('get_standard_prices', { year, month });
+            if (res && res.success && res.data) {
+                if (typeof res.data === 'string') {
+                    try { return { success: true, data: JSON.parse(res.data) }; } catch (e) {}
+                }
+                return res;
+            }
+            return { success: false, data: null };
+        } catch (err) {
+            return { success: false, data: null };
+        }
+    },
+
+    async saveStandardPrices(year, month, data) {
+        return await this.call('save_standard_prices', { year, month, data: JSON.stringify(data) });
     }
 };

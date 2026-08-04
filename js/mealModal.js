@@ -1,9 +1,9 @@
 /**
- * Meal Modal Controller & Dynamic Ingredients Table
+ * Meal Modal Controller & Dynamic Ingredients Table with Autocomplete
  */
 const MealModal = {
     selectedDateStr: "",
-    selectedMealType: "มื้อกลางวัน",
+    selectedMealType: "มื้อเช้า",
     activeRecord: null,
 
     openForDate(dateStr) {
@@ -18,7 +18,7 @@ const MealModal = {
             titleEl.innerText = `รายการอาหารประจำวันที่ ${dayNum} ${monthThai} ${yearThai}`;
         }
 
-        this.switchMealTab("มื้อกลางวัน");
+        this.switchMealTab("มื้อเช้า");
         UI.openModal('mealModal');
     },
 
@@ -43,20 +43,44 @@ const MealModal = {
 
         // Load record from monthData cache or create initial template
         const dayEntries = monthData[this.selectedDateStr] || {};
-        this.activeRecord = dayEntries[mealType] ? JSON.parse(JSON.stringify(dayEntries[mealType])) : {
+        let recKey = mealType;
+        if (mealType === 'มื้อเที่ยง' && !dayEntries['มื้อเที่ยง'] && dayEntries['มื้อกลางวัน']) {
+            recKey = 'มื้อกลางวัน';
+        }
+
+        this.activeRecord = dayEntries[recKey] ? JSON.parse(JSON.stringify(dayEntries[recKey])) : {
             date: this.selectedDateStr,
             meal_type: mealType,
             menu_name: "",
             items: [
-                { item: "ข้าวสาร", qty: 12, price: 35, total: 420 },
+                { item: "ข้าวสาร", qty: 12, price: 40, total: 480 },
                 { item: "", qty: 1, price: 0, total: 0 }
             ],
-            total_cost: 420,
+            total_cost: 480,
             status: "DRAFT"
         };
 
-        // If items are not an array, convert safely
-        if (!Array.isArray(this.activeRecord.items)) {
+        // Ensure default items use active month's standard price if available
+        const [year, month] = this.selectedDateStr.split('-').map(Number);
+        const stdPrices = StandardPrices.getForMonth(year, month);
+        const priceMap = {};
+        stdPrices.categories.forEach(cat => {
+            cat.items.forEach(it => {
+                priceMap[it.name.trim()] = Number(it.price) || 0;
+            });
+        });
+
+        if (Array.isArray(this.activeRecord.items)) {
+            this.activeRecord.items.forEach(row => {
+                const itemName = (row.item || "").trim();
+                if (priceMap.hasOwnProperty(itemName)) {
+                    row.price = priceMap[itemName];
+                }
+                const q = Number(row.qty) || 0;
+                const p = Number(row.price) || 0;
+                row.total = q * p;
+            });
+        } else {
             this.activeRecord.items = [];
         }
 
@@ -78,16 +102,26 @@ const MealModal = {
             tr.className = 'hover:bg-slate-50/80 transition group';
             tr.innerHTML = `
                 <td class="py-2.5 px-3 text-center text-slate-400 font-medium text-xs">${idx + 1}</td>
-                <td class="py-2 px-2">
-                    <input type="text" value="${escapeHtml(row.item || '')}" onchange="MealModal.updateItemRow(${idx}, 'item', this.value)" placeholder="ชื่อวัตถุดิบ (เช่น เนื้อหมู, ผัก)" class="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-700 focus:outline-none transition">
+                <td class="py-2 px-2 relative">
+                    <input type="text" value="${escapeHtml(row.item || '')}" 
+                        oninput="MealModal.handleItemInput(${idx}, this)" 
+                        onfocus="MealModal.handleItemInput(${idx}, this)"
+                        onblur="setTimeout(() => MealModal.closeAutocomplete(${idx}), 200)"
+                        placeholder="พิมพ์เพื่อค้นหา (เช่น หมูบด, ผัก)" 
+                        class="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-700 focus:outline-none transition font-medium">
+                    <div id="autocomplete-dropdown-${idx}" class="autocomplete-dropdown hidden"></div>
                 </td>
                 <td class="py-2 px-2">
-                    <input type="number" step="any" min="0" value="${row.qty !== undefined ? row.qty : 1}" onchange="MealModal.updateItemRow(${idx}, 'qty', this.value)" class="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs text-center focus:ring-2 focus:ring-emerald-700 focus:outline-none transition">
+                    <input type="number" step="any" min="0" value="${row.qty !== undefined ? row.qty : 1}" 
+                        onchange="MealModal.updateItemRow(${idx}, 'qty', this.value)" 
+                        class="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs text-center focus:ring-2 focus:ring-emerald-700 focus:outline-none transition">
                 </td>
                 <td class="py-2 px-2">
-                    <input type="number" step="any" min="0" value="${row.price !== undefined ? row.price : 0}" onchange="MealModal.updateItemRow(${idx}, 'price', this.value)" class="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs text-center focus:ring-2 focus:ring-emerald-700 focus:outline-none transition">
+                    <input type="number" id="item-price-input-${idx}" step="any" min="0" value="${row.price !== undefined ? row.price : 0}" 
+                        onchange="MealModal.updateItemRow(${idx}, 'price', this.value)" 
+                        class="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs text-center font-bold text-emerald-850 focus:ring-2 focus:ring-emerald-700 focus:outline-none transition">
                 </td>
-                <td class="py-2 px-3 text-right font-bold text-slate-700 text-xs">
+                <td class="py-2 px-3 text-right font-bold text-slate-700 text-xs" id="item-total-display-${idx}">
                     ${(Number(row.total) || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </td>
                 <td class="py-2 px-2 text-center">
@@ -100,6 +134,63 @@ const MealModal = {
         });
 
         this.calculateMealGrandTotal();
+    },
+
+    handleItemInput(idx, inputEl) {
+        const val = inputEl.value;
+        if (!this.activeRecord.items[idx]) return;
+        this.activeRecord.items[idx].item = val;
+
+        const [year, month] = this.selectedDateStr.split('-').map(Number);
+        const results = StandardPrices.searchItems(val, year, month);
+
+        const dropdown = document.getElementById(`autocomplete-dropdown-${idx}`);
+        if (!dropdown) return;
+
+        if (results.length === 0) {
+            dropdown.classList.add('hidden');
+            dropdown.innerHTML = '';
+            return;
+        }
+
+        let html = '';
+        results.forEach(res => {
+            html += `
+                <div class="autocomplete-item px-3 py-2 hover:bg-emerald-50 cursor-pointer flex items-center justify-between border-b border-slate-100 last:border-0"
+                    onmousedown="MealModal.selectAutocompleteItem(${idx}, '${escapeHtml(res.name)}', ${res.price})">
+                    <div class="flex items-center gap-1.5 truncate">
+                        <span class="text-xs">${res.icon || '📦'}</span>
+                        <span class="font-bold text-slate-800 text-xs">${escapeHtml(res.name)}</span>
+                        <span class="text-[10px] text-slate-400">(${escapeHtml(res.unit || 'หน่วย')})</span>
+                    </div>
+                    <div class="text-xs font-bold text-emerald-850 whitespace-nowrap ml-2">
+                        ${res.price} ฿
+                    </div>
+                </div>
+            `;
+        });
+
+        dropdown.innerHTML = html;
+        dropdown.classList.remove('hidden');
+    },
+
+    selectAutocompleteItem(idx, itemName, itemPrice) {
+        if (!this.activeRecord.items[idx]) return;
+        this.activeRecord.items[idx].item = itemName;
+        this.activeRecord.items[idx].price = itemPrice;
+
+        const qty = this.activeRecord.items[idx].qty || 1;
+        this.activeRecord.items[idx].total = qty * itemPrice;
+
+        this.renderIngredientsRows();
+        this.closeAutocomplete(idx);
+    },
+
+    closeAutocomplete(idx) {
+        const dropdown = document.getElementById(`autocomplete-dropdown-${idx}`);
+        if (dropdown) {
+            dropdown.classList.add('hidden');
+        }
     },
 
     updateItemRow(index, field, value) {

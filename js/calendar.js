@@ -51,6 +51,12 @@ async function loadCalendarView() {
         console.warn("Using offline / cached calendar data:", err);
     }
 
+    // Ensure active month standard prices are synced
+    if (typeof StandardPrices !== 'undefined') {
+        const stdPrices = StandardPrices.getForMonth(currentYear, currentMonth);
+        StandardPrices.propagatePriceChanges(currentYear, currentMonth, stdPrices);
+    }
+
     renderCalendarGrid();
     renderMobileAgendaView();
     calculateAndRenderStats();
@@ -149,50 +155,56 @@ function renderCalendarGrid() {
 
         // Day Content Summary
         const dayEntries = monthData[fullDateStr] || {};
-        const hasLunch = !!dayEntries['มื้อกลางวัน'];
-        const hasBreakfast = !!dayEntries['มื้อเช้า'];
-        const hasDinner = !!dayEntries['มื้อเย็น'];
+        const bRec = dayEntries['มื้อเช้า'];
+        const lRec = dayEntries['มื้อเที่ยง'] || dayEntries['มื้อกลางวัน'];
+        const dRec = dayEntries['มื้อเย็น'];
 
         const contentBox = document.createElement('div');
-        contentBox.className = 'mt-1 space-y-1';
+        contentBox.className = 'mt-1 space-y-0.5 overflow-hidden';
 
-        if (hasLunch) {
-            const lunchRec = dayEntries['มื้อกลางวัน'];
+        if (bRec) {
             const badge = document.createElement('div');
-            badge.className = 'badge-lunch rounded px-1.5 py-0.5 text-[10px] sm:text-xs font-semibold truncate flex items-center gap-1';
-            badge.innerHTML = `<i class="fa-solid fa-utensils text-[9px]"></i> <span class="truncate">${escapeHtml(lunchRec.menu_name || 'มื้อกลางวัน')}</span>`;
+            badge.className = 'badge-breakfast rounded px-1.5 py-0.5 text-[10px] sm:text-xs font-semibold truncate flex items-center gap-1';
+            badge.title = `มื้อเช้า: ${bRec.menu_name || 'ไม่มีชื่อเมนู'}`;
+            badge.innerHTML = `<span class="shrink-0 font-bold">🌅 เช้า:</span> <span class="truncate">${escapeHtml(bRec.menu_name || 'ไม่มีชื่อเมนู')}</span>`;
             contentBox.appendChild(badge);
         }
 
-        if (hasBreakfast || hasDinner) {
-            const extraBadge = document.createElement('div');
-            extraBadge.className = 'text-[9px] sm:text-[10px] text-slate-500 font-semibold pl-0.5 flex items-center gap-1';
-            let extraText = [];
-            if (hasBreakfast) extraText.push('🌅เช้า');
-            if (hasDinner) extraText.push('🌙เย็น');
-            extraBadge.innerText = extraText.join(' ');
-            contentBox.appendChild(extraBadge);
+        if (lRec) {
+            const badge = document.createElement('div');
+            badge.className = 'badge-lunch rounded px-1.5 py-0.5 text-[10px] sm:text-xs font-semibold truncate flex items-center gap-1';
+            badge.title = `มื้อเที่ยง: ${lRec.menu_name || 'ไม่มีชื่อเมนู'}`;
+            badge.innerHTML = `<span class="shrink-0 font-bold">☀️ เที่ยง:</span> <span class="truncate">${escapeHtml(lRec.menu_name || 'ไม่มีชื่อเมนู')}</span>`;
+            contentBox.appendChild(badge);
         }
 
-        if (!hasLunch && !hasBreakfast && !hasDinner) {
+        if (dRec) {
+            const badge = document.createElement('div');
+            badge.className = 'badge-dinner rounded px-1.5 py-0.5 text-[10px] sm:text-xs font-semibold truncate flex items-center gap-1';
+            badge.title = `มื้อเย็น: ${dRec.menu_name || 'ไม่มีชื่อเมนู'}`;
+            badge.innerHTML = `<span class="shrink-0 font-bold">🌙 เย็น:</span> <span class="truncate">${escapeHtml(dRec.menu_name || 'ไม่มีชื่อเมนู')}</span>`;
+            contentBox.appendChild(badge);
+        }
+
+        if (!bRec && !lRec && !dRec) {
             const emptyAdd = document.createElement('div');
             emptyAdd.className = 'opacity-0 group-hover:opacity-100 text-[10px] text-emerald-600 font-medium flex items-center justify-center py-1 transition';
             emptyAdd.innerHTML = '<i class="fa-solid fa-plus mr-0.5"></i> เพิ่ม';
             contentBox.appendChild(emptyAdd);
         }
 
-        // Hover Tooltip for Desktop
-        if (hasLunch || hasBreakfast || hasDinner) {
+        // Hover Tooltip / Detail Popup for Desktop & Mobile
+        if (bRec || lRec || dRec) {
             const tooltip = document.createElement('div');
-            tooltip.className = 'hidden group-hover:block absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-52 p-3 bg-slate-900 text-white text-xs rounded-xl shadow-2xl z-30 pointer-events-none animate-fade-in';
+            tooltip.className = 'hidden group-hover:block absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-56 p-3 bg-slate-900 text-white text-xs rounded-xl shadow-2xl z-30 pointer-events-none animate-fade-in border border-slate-700';
             let tooltipHTML = `<div class="font-bold text-emerald-300 mb-1.5 border-b border-slate-700 pb-1 flex items-center justify-between">
                 <span>วันที่ ${day} ${CONFIG.THAI_MONTHS[currentMonth-1]}</span>
-                <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
+                <i class="fa-solid fa-utensils text-[10px] text-slate-400"></i>
             </div>`;
             
-            if (hasLunch) tooltipHTML += `<div class="mb-0.5"><b>☀️ กลางวัน:</b> ${escapeHtml(dayEntries['มื้อกลางวัน'].menu_name || '-')} <span class="text-emerald-400">(${Number(dayEntries['มื้อกลางวัน'].total_cost||0).toLocaleString('th-TH')}฿)</span></div>`;
-            if (hasBreakfast) tooltipHTML += `<div class="mb-0.5"><b>🌅 เช้า:</b> ${escapeHtml(dayEntries['มื้อเช้า'].menu_name || '-')} <span class="text-amber-400">(${Number(dayEntries['มื้อเช้า'].total_cost||0).toLocaleString('th-TH')}฿)</span></div>`;
-            if (hasDinner) tooltipHTML += `<div><b>🌙 เย็น:</b> ${escapeHtml(dayEntries['มื้อเย็น'].menu_name || '-')} <span class="text-indigo-300">(${Number(dayEntries['มื้อเย็น'].total_cost||0).toLocaleString('th-TH')}฿)</span></div>`;
+            if (bRec) tooltipHTML += `<div class="mb-1 text-amber-300"><b>🌅 เช้า:</b> ${escapeHtml(bRec.menu_name || '-')} <span class="text-white">(${Number(bRec.total_cost||0).toLocaleString('th-TH')}฿)</span></div>`;
+            if (lRec) tooltipHTML += `<div class="mb-1 text-emerald-300"><b>☀️ เที่ยง:</b> ${escapeHtml(lRec.menu_name || '-')} <span class="text-white">(${Number(lRec.total_cost||0).toLocaleString('th-TH')}฿)</span></div>`;
+            if (dRec) tooltipHTML += `<div class="text-indigo-300"><b>🌙 เย็น:</b> ${escapeHtml(dRec.menu_name || '-')} <span class="text-white">(${Number(dRec.total_cost||0).toLocaleString('th-TH')}฿)</span></div>`;
 
             tooltip.innerHTML = tooltipHTML;
             dayCell.appendChild(tooltip);
@@ -219,11 +231,11 @@ function renderMobileAgendaView() {
         const fullDateStr = `${currentYear}-${monthStr}-${dayStr}`;
 
         const dayEntries = monthData[fullDateStr] || {};
-        const hasLunch = !!dayEntries['มื้อกลางวัน'];
-        const hasBreakfast = !!dayEntries['มื้อเช้า'];
-        const hasDinner = !!dayEntries['มื้อเย็น'];
+        const bRec = dayEntries['มื้อเช้า'];
+        const lRec = dayEntries['มื้อเที่ยง'] || dayEntries['มื้อกลางวัน'];
+        const dRec = dayEntries['มื้อเย็น'];
 
-        if (hasLunch || hasBreakfast || hasDinner) {
+        if (bRec || lRec || dRec) {
             hasAnyData = true;
             const dateObj = new Date(currentYear, currentMonth - 1, day);
             const dayOfWeekStr = CONFIG.THAI_DAYS_SHORT[dateObj.getDay()];
@@ -233,14 +245,14 @@ function renderMobileAgendaView() {
             card.onclick = () => MealModal.openForDate(fullDateStr);
 
             let mealsHTML = '';
-            if (hasBreakfast) {
-                mealsHTML += `<div class="text-xs text-amber-700 font-medium">🌅 เช้า: ${escapeHtml(dayEntries['มื้อเช้า'].menu_name || 'ไม่มีชื่อเมนู')}</div>`;
+            if (bRec) {
+                mealsHTML += `<div class="text-xs text-amber-700 font-semibold">🌅 เช้า: ${escapeHtml(bRec.menu_name || 'ไม่มีชื่อเมนู')} <span class="text-slate-500">(${Number(bRec.total_cost||0).toLocaleString('th-TH')}฿)</span></div>`;
             }
-            if (hasLunch) {
-                mealsHTML += `<div class="text-xs text-emerald-800 font-bold">☀️ กลางวัน: ${escapeHtml(dayEntries['มื้อกลางวัน'].menu_name || 'ไม่มีชื่อเมนู')} (${Number(dayEntries['มื้อกลางวัน'].total_cost||0).toLocaleString('th-TH')}฿)</div>`;
+            if (lRec) {
+                mealsHTML += `<div class="text-xs text-emerald-800 font-bold">☀️ เที่ยง: ${escapeHtml(lRec.menu_name || 'ไม่มีชื่อเมนู')} <span class="text-slate-500">(${Number(lRec.total_cost||0).toLocaleString('th-TH')}฿)</span></div>`;
             }
-            if (hasDinner) {
-                mealsHTML += `<div class="text-xs text-indigo-700 font-medium">🌙 เย็น: ${escapeHtml(dayEntries['มื้อเย็น'].menu_name || 'ไม่มีชื่อเมนู')}</div>`;
+            if (dRec) {
+                mealsHTML += `<div class="text-xs text-indigo-700 font-semibold">🌙 เย็น: ${escapeHtml(dRec.menu_name || 'ไม่มีชื่อเมนู')} <span class="text-slate-500">(${Number(dRec.total_cost||0).toLocaleString('th-TH')}฿)</span></div>`;
             }
 
             card.innerHTML = `
