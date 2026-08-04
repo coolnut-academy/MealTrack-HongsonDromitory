@@ -11,6 +11,16 @@
     <link rel="apple-touch-icon" href="Hs_logo_mid.png">
 
     <!-- Tailwind CSS CDN -->
+    <script>
+        // Suppress Tailwind Play CDN warning in DevTools console
+        (function() {
+            const origWarn = console.warn;
+            console.warn = function(...args) {
+                if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) return;
+                origWarn.apply(console, args);
+            };
+        })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
