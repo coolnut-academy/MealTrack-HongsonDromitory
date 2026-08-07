@@ -170,11 +170,32 @@ body {
         background: white !important;
         color: black !important;
     }
+    .modal-backdrop {
+        position: static !important;
+        background: transparent !important;
+        padding: 0 !important;
+        display: block !important;
+    }
+    .glass-panel {
+        box-shadow: none !important;
+        border: none !important;
+        max-height: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
     .print-container {
         width: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
         box-shadow: none !important;
+        overflow: visible !important;
+    }
+    table {
+        page-break-inside: auto;
+    }
+    tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
     }
 }
 

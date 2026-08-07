@@ -258,6 +258,56 @@ const StandardPrices = {
     },
 
     /**
+     * Helper to lookup metadata (unit, category, icon) for an item name
+     */
+    getItemMeta(itemName, year, month) {
+        if (!itemName) return { unit: "กิโลกรัม", category: "อื่นๆ", icon: "📦" };
+        const cleanName = itemName.trim().toLowerCase();
+        
+        let targetYear = year;
+        let targetMonth = month;
+        if (!targetYear || !targetMonth) {
+            if (typeof currentYear !== 'undefined' && typeof currentMonth !== 'undefined') {
+                targetYear = currentYear;
+                targetMonth = currentMonth;
+            } else {
+                const now = new Date();
+                targetYear = now.getFullYear();
+                targetMonth = now.getMonth() + 1;
+            }
+        }
+
+        const data = this.getForMonth(targetYear, targetMonth);
+        if (data && Array.isArray(data.categories)) {
+            for (const cat of data.categories) {
+                if (Array.isArray(cat.items)) {
+                    for (const item of cat.items) {
+                        if ((item.name || '').trim().toLowerCase() === cleanName) {
+                            return {
+                                unit: item.unit || "กิโลกรัม",
+                                category: cat.name || "อื่นๆ",
+                                icon: cat.icon || "📦"
+                            };
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fallback intelligent unit & category inference
+        if (cleanName.includes("แก๊ส")) return { unit: "ถัง", category: "แก๊สหุงต้ม", icon: "🔥" };
+        if (cleanName.includes("กะเพรา") || cleanName.includes("ข่า") || cleanName.includes("ตระไคร้") || cleanName.includes("คืนฉ่าย") || cleanName.includes("ต้นหอม") || cleanName.includes("โหระพา")) return { unit: "มัด", category: "ผักสดและผลไม้", icon: "🥬" };
+        if (cleanName.includes("ผัก") || cleanName.includes("ผลไม้") || cleanName.includes("แตง") || cleanName.includes("มะ") || cleanName.includes("แครอท") || cleanName.includes("กระเทียม") || cleanName.includes("กะหล่ำ") || cleanName.includes("หอม")) return { unit: "กิโลกรัม", category: "ผักสดและผลไม้", icon: "🥬" };
+        if (cleanName.includes("ซอส") || cleanName.includes("ซีอิ๊ว") || cleanName.includes("น้ำปลา") || cleanName.includes("น้ำมัน") || cleanName.includes("น้ำส้มสายชู") || cleanName.includes("พริกไทย")) return { unit: "ขวด", category: "อาหารแห้ง/เครื่องปรุง", icon: "🧂" };
+        if (cleanName.includes("กะทิ") || cleanName.includes("ซุปไก่")) return { unit: "กล่อง", category: "อาหารแห้ง/เครื่องปรุง", icon: "🧂" };
+        if (cleanName.includes("รสดี") || cleanName.includes("พริกแกง") || cleanName.includes("เกลือ") || cleanName.includes("น้ำตาล")) return { unit: "กิโลกรัม", category: "อาหารแห้ง/เครื่องปรุง", icon: "🧂" };
+        if (cleanName.includes("ผง") || cleanName.includes("ซอง") || cleanName.includes("พริกลาบ") || cleanName.includes("สีผสม")) return { unit: "ซอง", category: "อาหารแห้ง/เครื่องปรุง", icon: "🧂" };
+        if (cleanName.includes("ข้าวสาร")) return { unit: "กิโลกรัม", category: "อาหารแห้ง/เครื่องปรุง", icon: "🌾" };
+        
+        return { unit: "กิโลกรัม", category: "อาหารสด", icon: "🥩" };
+    },
+
+    /**
      * Propagates standard price changes to monthData records in active memory/cache for the target month
      */
     propagatePriceChanges(year, month, stdData) {
