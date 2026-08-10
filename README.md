@@ -32,12 +32,18 @@
 - **Item Metadata Helper**: ดึงข้อมูลหน่วยนับมาตรฐาน (กก., ขวด, ถัง, ซอง ฯลฯ) หมวดหมู่ และไอคอนมาใช้อ้างอิงในระบบให้อัตโนมัติ
 - **Multi-Device Cloud Sync**: ซิงค์ข้อมูลราคากลางรายเดือนกับ Google Sheets แบบเรียลไทม์ รองรับการทำงานจากหลายอุปกรณ์พร้อมกัน
 
-### 🔒 2. ระบบยืนยันตัวตนและความปลอดภัย (Passcode Protection)
+### ⭐ 2. สมุดสูตรอาหารและระบบค้นหาเมนูยอดฮิตอัตโนมัติ (Popular Menus & Recipe Book)
+- **ระบบเรียนรู้สูตรอาหารอัตโนมัติ (Auto-Learning Recipe Book)**: จดจำชื่อเมนู ส่วนประกอบ วัตถุดิบ และปริมาณ (qty) จากการใช้งานจริงของผู้ใช้ บันทึกซิงค์ตรงกับ Google Sheets (Sheet: `FavoriteMenus`) เพื่อให้รองรับผู้ใช้งานหลายคนพร้อมกัน
+- **Menu Autocomplete & Formula Prefill**: เมื่อผู้ใช้พิมพ์ตัวอักษรในช่อง "ชื่อเมนูอาหาร" ในหน้าบันทึกมื้ออาหาร ระบบจะแสดง Dropdown แนะนำเมนูยอดฮิตที่เคยบันทึกไว้ เมื่อเลือกเมนู ระบบจะดึงส่วนประกอบและปริมาณทั้งหมดลงตารางวัตถุดิบให้อัตโนมัติ พร้อมคำนวณราคาตามราคากลางประจำเดือน
+- **Smart Confirmation & Recipe Updates**: ถามยืนยันก่อนบันทึกสูตรใหม่หรืออัพเดตสูตรเดิมเสมอ หากมีการแก้ไขส่วนประกอบหรือปริมาณในมื้ออาหาร
+- **Popular Menus Management Modal**: ปุ่ม "⭐ เมนูยอดฮิต" บน Header Navbar เปิดหน้าต่างจัดการสมุดสูตรอาหาร สามารถดูรายการเมนูทั้งหมด เรียงลำดับตามความนิยม (Use Count), ดูรายละเอียดส่วนประกอบแบบขยาย (Expandable Card), แก้ไขสูตร ลบเมนู หรือเพิ่มสูตรใหม่ด้วยตนเอง
+
+### 🔒 3. ระบบยืนยันตัวตนและความปลอดภัย (Passcode Protection)
 - **ระบบรักษาความปลอดภัยแบบ Passcode**: ป้องกันบุคคลภายนอกเข้าถึงหรือแก้ไขข้อมูล
 - **Toggle Password Visibility**: ปุ่มเปิด/ปิดการแสดงรหัสผ่านขณะพิมพ์
 - **Offline Auth Fallback**: ระบบรองรับการตรวจสอบรหัสผ่านสำรองในกรณีฉุกเฉินหรือสัญญาณเครือข่ายขัดข้อง
 
-### 📅 3. ปฏิทินแสดงผลมื้ออาหาร (Interactive Meal Calendar & Direct Badges)
+### 📅 4. ปฏิทินแสดงผลมื้ออาหาร (Interactive Meal Calendar & Direct Badges)
 - **แสดงชื่อเมนูทุกมื้อลงบนปฏิทินทันที**: แสดงป้ายชื่อเมนูแยกตามมื้อบนช่องวันที่ (🌅 **เช้า**, ☀️ **เที่ยง**, 🌙 **เย็น**) สามารถดูเมนูได้ทันทีโดยไม่ต้องคลิกเข้าไปดู
 - **Grid & Agenda List View**: มุมมองปฏิทินแบบตาราง และมุมมองแบบรายการ (Mobile Optimized)
 - **Detail Hover Popup**: เมื่อเลื่อนเมาส์ชี้บนช่องวันที่ ระบบจะแสดง Popup การ์ดสีเข้ม สรุปเมนูอาหารและยอดเงินรวมของทั้ง 3 มื้อ
@@ -100,16 +106,21 @@ $$ \text{งบประมาณรวมต่อวัน} = (86 \text{ ค�
 MealTrack-HongsonDromitory/
 ├── 📄 index.html            # หน้าหลักของระบบ (Navbar Shortcuts, Tabbed Stats Modal & Tables)
 ├── 🖼️ Hs_logo_mid.png       # โลโก้ประจำโรงเรียนห้องสอนศึกษาฯ
-├── 📄 README.md             # เอกสารอธิบายโปรเจกต์และวิธีใช้งาน
+├── 📄 README.md             # เอกสารอธิบายโปรเจกต์และเทคโนโลยีที่ใช้
+├── 📄 USER_GUIDE.md          # คู่มือการใช้งานระบบสำหรับผู้ใช้และเจ้าหน้าที่
+├── 📂 gas/                  # ซอร์สโค้ดสำหรับ Google Apps Script Backend
+│   ├── 📜 Code.gs           # โค้ดหลัก Google Apps Script (doPost Router, MealRecords, StandardPrices)
+│   └── 📜 FavoriteMenus.gs  # โค้ดจัดการสมุดสูตรอาหารและเมนูยอดฮิต (Sheet: FavoriteMenus)
 ├── 📂 css/
 │   └── 🎨 styles.css        # CSS ตกแต่งเพิ่มเติม, Glassmorphism, Autocomplete, Toast & Print A4 CSS
 └── 📂 js/
     ├── ⚙️ config.js         # ค่าคอนฟิกกลาง (API URL, อัตรงบประมาณ, ชื่อเดือนภาษาไทย)
-    ├── 🔌 api.js            # โมดูลเชื่อมต่อ Google Apps Script API (Meal Records & Standard Prices)
+    ├── 🔌 api.js            # โมดูลเชื่อมต่อ Google Apps Script API (Meal Records, Standard Prices & Favorite Menus)
     ├── 🏷️ standardPrices.js # โมดูลจัดการราคากลางวัตถุดิบรายเดือน, Autocomplete, Item Metadata & Auto-Recovery
+    ├── ⭐ favoriteMenus.js  # โมดูลจัดการสมุดสูตรอาหาร เมนูยอดฮิต และ Modal UI Controller
     ├── 🚀 app.js            # คอนโทรลเลอร์หลักของระบบ (Init & Authentication)
     ├── 📅 calendar.js       # ระบบประมวลผลและวาดตารางปฏิทิน (Direct Badges & Detail Tooltip)
-    ├── 🍱 mealModal.js      # ระบบจัดการฟอร์มลงรายการอาหารและคำนวณวัตถุดิบ
+    ├── 🍱 mealModal.js      # ระบบจัดการฟอร์มลงรายการอาหาร คำนวณวัตถุดิบ & Menu Autocomplete
     ├── 📊 stats.js          # ระบบประมวลผลสถิติ, สรุปปริมาณวัตถุดิบรายเดือน, ตัวกรองหมวดหมู่ & Export CSV
     └── 🛠️ ui.js             # ตัวช่วยจัดการ UI (Toast Alert, Modal Management)
 ```
