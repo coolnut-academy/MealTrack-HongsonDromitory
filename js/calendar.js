@@ -57,6 +57,11 @@ async function loadCalendarView() {
         StandardPrices.propagatePriceChanges(currentYear, currentMonth, stdPrices);
     }
 
+    // Prefetch favorite menus in background
+    if (typeof FavoriteMenus !== 'undefined') {
+        FavoriteMenus.fetchAll().catch(() => {});
+    }
+
     renderCalendarGrid();
     renderMobileAgendaView();
     calculateAndRenderStats();

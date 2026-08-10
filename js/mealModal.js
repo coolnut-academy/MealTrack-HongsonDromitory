@@ -5,6 +5,7 @@ const MealModal = {
     selectedDateStr: "",
     selectedMealType: "มื้อเช้า",
     activeRecord: null,
+    selectedFavoriteMenuId: null,
 
     openForDate(dateStr) {
         this.selectedDateStr = dateStr;
@@ -28,6 +29,7 @@ const MealModal = {
 
     switchMealTab(mealType) {
         this.selectedMealType = mealType;
+        this.selectedFavoriteMenuId = null;
 
         // Highlight Tab Buttons
         document.querySelectorAll('.meal-tab').forEach(btn => {
@@ -59,6 +61,12 @@ const MealModal = {
             total_cost: 480,
             status: "DRAFT"
         };
+
+        // Check if current menu matches a favorite menu
+        if (this.activeRecord.menu_name && typeof FavoriteMenus !== 'undefined') {
+            const match = FavoriteMenus.getAll().find(m => (m.name || "").trim().toLowerCase() === (this.activeRecord.menu_name || "").trim().toLowerCase());
+            if (match) this.selectedFavoriteMenuId = match.id;
+        }
 
         // Ensure default items use active month's standard price if available
         const [year, month] = this.selectedDateStr.split('-').map(Number);
@@ -235,6 +243,97 @@ const MealModal = {
         }
     },
 
+    handleMenuNameInput(inputEl) {
+        if (!inputEl) return;
+        const val = inputEl.value;
+        if (this.activeRecord) this.activeRecord.menu_name = val;
+
+        const dropdown = document.getElementById('menuNameAutocompleteDropdown');
+        if (!dropdown || typeof FavoriteMenus === 'undefined') return;
+
+        if (!val || !val.trim()) {
+            dropdown.classList.add('hidden');
+            dropdown.innerHTML = '';
+            return;
+        }
+
+        const matches = FavoriteMenus.search(val);
+        if (matches.length === 0) {
+            dropdown.classList.add('hidden');
+            dropdown.innerHTML = '';
+            return;
+        }
+
+        let html = '';
+        matches.forEach(m => {
+            const itemsCount = (m.items || []).length;
+            const cost = (Number(m.total_cost) || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 });
+            html += `
+                <div class="autocomplete-item px-3 py-2.5 hover:bg-emerald-50 cursor-pointer flex items-center justify-between border-b border-slate-100 last:border-0"
+                    onmousedown="MealModal.selectFavoriteMenu('${m.id}')">
+                    <div class="flex flex-col truncate pr-2 text-left">
+                        <div class="flex items-center gap-1.5 truncate">
+                            <span class="text-xs">⭐</span>
+                            <span class="font-bold text-slate-800 text-xs truncate">${escapeHtml(m.name)}</span>
+                        </div>
+                        <span class="text-[10px] text-slate-400 mt-0.5">${itemsCount} วัตถุดิบ | เคยบันทึก ${m.use_count || 1} ครั้ง</span>
+                    </div>
+                    <div class="text-xs font-bold text-emerald-850 whitespace-nowrap">
+                        ~${cost} ฿
+                    </div>
+                </div>
+            `;
+        });
+
+        dropdown.innerHTML = html;
+        dropdown.classList.remove('hidden');
+    },
+
+    selectFavoriteMenu(menuId) {
+        if (typeof FavoriteMenus === 'undefined') return;
+        const menus = FavoriteMenus.getAll();
+        const menu = menus.find(m => m.id === menuId);
+        if (!menu) return;
+
+        this.selectedFavoriteMenuId = menu.id;
+        const menuInput = document.getElementById('menuNameInput');
+        if (menuInput) menuInput.value = menu.name;
+        if (this.activeRecord) this.activeRecord.menu_name = menu.name;
+
+        // Populate items with quantities from the favorite menu
+        const [year, month] = this.selectedDateStr.split('-').map(Number);
+        const stdPrices = StandardPrices.getForMonth(year, month);
+        const priceMap = {};
+        if (stdPrices && Array.isArray(stdPrices.categories)) {
+            stdPrices.categories.forEach(cat => {
+                cat.items.forEach(it => {
+                    priceMap[it.name.trim()] = Number(it.price) || 0;
+                });
+            });
+        }
+
+        const copiedItems = JSON.parse(JSON.stringify(menu.items || []));
+        copiedItems.forEach(row => {
+            const name = (row.item || "").trim();
+            if (priceMap.hasOwnProperty(name)) {
+                row.price = priceMap[name];
+            }
+            const q = Number(row.qty) || 0;
+            const p = Number(row.price) || 0;
+            row.total = q * p;
+        });
+
+        this.activeRecord.items = copiedItems;
+        this.renderIngredientsRows();
+        this.closeMenuAutocomplete();
+        UI.showToast(`โหลดสูตรเมนู "${menu.name}" เรียบร้อยแล้ว`, "success");
+    },
+
+    closeMenuAutocomplete() {
+        const dropdown = document.getElementById('menuNameAutocompleteDropdown');
+        if (dropdown) dropdown.classList.add('hidden');
+    },
+
     async saveRecord() {
         if (!this.activeRecord) return;
 
@@ -261,6 +360,54 @@ const MealModal = {
             }
         } catch (err) {
             UI.showToast("บันทึกในเครื่องเรียบร้อยแล้ว (ไม่สามารถส่งไป Google Sheets ได้)", "warning");
+        }
+
+        // Handle Popular Menus (Recipe Book) Auto-save or Update Prompt
+        if (typeof FavoriteMenus !== 'undefined' && this.activeRecord.menu_name) {
+            const menuName = this.activeRecord.menu_name.trim();
+            const validItems = (this.activeRecord.items || []).filter(it => (it.item || "").trim() !== "");
+
+            if (validItems.length > 0) {
+                const existingList = FavoriteMenus.getAll();
+                const existingMenu = existingList.find(m => (m.name || "").trim().toLowerCase() === menuName.toLowerCase());
+
+                if (existingMenu) {
+                    const existingItemsStr = JSON.stringify((existingMenu.items || []).map(i => ({ item: i.item.trim(), qty: Number(i.qty) || 0 })));
+                    const currentItemsStr = JSON.stringify(validItems.map(i => ({ item: i.item.trim(), qty: Number(i.qty) || 0 })));
+
+                    if (existingItemsStr !== currentItemsStr) {
+                        setTimeout(() => {
+                            if (confirm(`คุณได้ปรับเปลี่ยนส่วนประกอบหรือปริมาณในสูตรเมนู "${menuName}"\n\nต้องการอัพเดตสูตรนี้ใน "เมนูยอดฮิต" สำหรับใช้งานครั้งต่อไปด้วยหรือไม่?`)) {
+                                FavoriteMenus.save({
+                                    id: existingMenu.id,
+                                    name: menuName,
+                                    items: validItems,
+                                    total_cost: this.activeRecord.total_cost
+                                });
+                                UI.showToast(`อัพเดตสูตรเมนูยอดฮิต "${menuName}" เรียบร้อยแล้ว`, 'success');
+                            }
+                        }, 400);
+                    } else {
+                        FavoriteMenus.save({
+                            id: existingMenu.id,
+                            name: menuName,
+                            items: validItems,
+                            total_cost: this.activeRecord.total_cost
+                        });
+                    }
+                } else {
+                    setTimeout(() => {
+                        if (confirm(`ต้องการบันทึกเมนู "${menuName}" เข้าสู่ "เมนูยอดฮิต" สำหรับใช้เป็นสูตรค้นหาอัตโนมัติในครั้งต่อไปหรือไม่?`)) {
+                            FavoriteMenus.save({
+                                name: menuName,
+                                items: validItems,
+                                total_cost: this.activeRecord.total_cost
+                            });
+                            UI.showToast(`เพิ่มเมนู "${menuName}" เข้าสู่เมนูยอดฮิตเรียบร้อยแล้ว`, 'success');
+                        }
+                    }, 400);
+                }
+            }
         }
     },
 

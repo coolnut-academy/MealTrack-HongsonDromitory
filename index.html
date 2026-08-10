@@ -142,6 +142,13 @@
             </div>
 
             <div class="flex items-center gap-2">
+                <button onclick="FavoriteMenusModal.open()"
+                    class="px-3 py-2 bg-emerald-700/90 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold rounded-xl border border-emerald-600/50 transition flex items-center gap-2 shadow-xs"
+                    title="จัดการเมนูยอดฮิต">
+                    <i class="fa-solid fa-star text-gold-400"></i>
+                    <span class="hidden sm:inline">เมนูยอดฮิต</span>
+                    <span class="sm:hidden">ยอดฮิต</span>
+                </button>
                 <button onclick="StandardPricesModal.open()"
                     class="px-3 py-2 bg-emerald-700/90 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold rounded-xl border border-emerald-600/50 transition flex items-center gap-2 shadow-xs"
                     title="จัดการราคากลางวัตถุดิบรายเดือน">
@@ -291,9 +298,16 @@
             <div class="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4 sm:space-y-5">
                 <div>
                     <label
-                        class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">ชื่อเมนูอาหาร</label>
-                    <input type="text" id="menuNameInput" placeholder="เช่น แกงเผ็ดลูกชิ้น, ต้มยำไก่, ผัดผักรวม"
-                        class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-700 bg-slate-50/50 text-sm font-medium transition">
+                        class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">ชื่อเมนูอาหาร (พิมพ์เพื่อค้นหาจากเมนูยอดฮิต)</label>
+                    <div class="relative">
+                        <input type="text" id="menuNameInput" 
+                            oninput="MealModal.handleMenuNameInput(this)"
+                            onfocus="MealModal.handleMenuNameInput(this)"
+                            onblur="setTimeout(() => MealModal.closeMenuAutocomplete(), 200)"
+                            placeholder="เช่น แกงเผ็ดลูกชิ้น, ต้มยำไก่, ผัดผักรวม (พิมพ์อักษรเพื่อเลือกเมนูที่เคยบันทึก)"
+                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-700 bg-slate-50/50 text-sm font-medium transition">
+                        <div id="menuNameAutocompleteDropdown" class="autocomplete-dropdown hidden"></div>
+                    </div>
                 </div>
 
                 <!-- Items Table -->
@@ -798,6 +812,140 @@
         </div>
     </div>
 
+    <!-- POPULAR / FAVORITE MENUS MANAGEMENT MODAL -->
+    <div id="favoriteMenusModal"
+        class="fixed inset-0 z-40 hidden flex items-center justify-center p-2 sm:p-4 modal-backdrop overflow-y-auto">
+        <div
+            class="glass-panel w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 my-4 sm:my-8 overflow-hidden flex flex-col max-h-[92vh] animate-slide-up">
+            <!-- Modal Header -->
+            <div class="bg-emerald-850 text-white px-5 sm:px-6 py-4 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-star text-gold-400 text-xl"></i>
+                    <div>
+                        <h3 class="font-bold text-base sm:text-lg">สมุดสูตรอาหาร & เมนูยอดฮิต</h3>
+                        <p class="text-xs text-emerald-200">จัดการ เพิ่ม ลบ ปรับแต่ง สูตรอาหารที่ถูกจดจำในระบบ</p>
+                    </div>
+                </div>
+                <button onclick="FavoriteMenusModal.close()"
+                    class="w-8 h-8 rounded-full bg-emerald-950/60 hover:bg-emerald-950 flex items-center justify-center text-white transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Search Bar & Actions -->
+            <div class="bg-slate-100 p-3 sm:p-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 shrink-0">
+                <div class="flex items-center gap-2 flex-1 max-w-md">
+                    <div class="relative w-full">
+                        <input type="text" id="favMenuSearchInput" placeholder="ค้นหาเมนูยอดฮิต..."
+                            oninput="FavoriteMenusModal.setSearchFilter(this.value)"
+                            class="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-300 bg-white text-xs font-medium focus:ring-2 focus:ring-emerald-700 focus:outline-none shadow-xs">
+                        <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <span id="favMenuTotalCountBadge" class="text-xs font-bold text-slate-600 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-xs">
+                        0 รายการ
+                    </span>
+                    <button type="button" onclick="FavoriteMenusModal.openAddModal()"
+                        class="px-3.5 py-2 bg-emerald-850 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-plus"></i> <span>เพิ่มสูตรเมนูใหม่</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Area: List of Favorite Menus -->
+            <div id="favMenuListContainer" class="p-4 sm:p-6 overflow-y-auto flex-1 space-y-3 bg-slate-50/50">
+                <!-- Dynamic Menu Cards Rendered via JS -->
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="bg-slate-100 px-4 sm:px-6 py-3.5 flex items-center justify-end border-t border-slate-200 shrink-0">
+                <button type="button" onclick="FavoriteMenusModal.close()"
+                    class="px-5 py-2 bg-emerald-850 hover:bg-emerald-900 text-white rounded-xl text-xs font-semibold shadow-md transition">
+                    ปิดหน้าต่าง
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD/EDIT FAVORITE MENU FORM MODAL -->
+    <div id="favMenuFormModal"
+        class="fixed inset-0 z-50 hidden flex items-center justify-center p-2 sm:p-4 modal-backdrop overflow-y-auto">
+        <div
+            class="glass-panel w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-200 my-4 sm:my-8 overflow-hidden flex flex-col max-h-[92vh] animate-slide-up">
+            <!-- Modal Header -->
+            <div class="bg-emerald-850 text-white px-5 sm:px-6 py-4 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-pen-to-square text-gold-400 text-xl"></i>
+                    <div>
+                        <h3 id="favMenuFormTitle" class="font-bold text-base sm:text-lg">เพิ่ม/แก้ไข สูตรเมนูยอดฮิต</h3>
+                        <p class="text-xs text-emerald-200">ระบุชื่อเมนูและส่วนประกอบพร้อมปริมาณมาตรฐาน</p>
+                    </div>
+                </div>
+                <button type="button" onclick="FavoriteMenusModal.closeFormModal()"
+                    class="w-8 h-8 rounded-full bg-emerald-950/60 hover:bg-emerald-950 flex items-center justify-center text-white transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Form Body -->
+            <form onsubmit="FavoriteMenusModal.saveFormMenu(event)" class="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">ชื่อเมนูอาหาร</label>
+                    <input type="text" id="favMenuFormNameInput" required placeholder="เช่น ผัดกระเพราหมูสับ, ต้มยำกุ้ง"
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-emerald-700 focus:outline-none transition">
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">ส่วนประกอบวัตถุดิบและปริมาณ</label>
+                        <button type="button" onclick="FavoriteMenusModal.addFormItemRow()"
+                            class="px-3 py-1 bg-emerald-50 text-emerald-850 hover:bg-emerald-100 text-xs font-bold rounded-lg border border-emerald-200 transition flex items-center gap-1">
+                            <i class="fa-solid fa-plus text-xs"></i> เพิ่มรายการ
+                        </button>
+                    </div>
+
+                    <div class="border border-slate-200 rounded-xl overflow-hidden shadow-xs bg-white">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead class="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
+                                <tr>
+                                    <th class="py-2 px-3 w-8 text-center">#</th>
+                                    <th class="py-2 px-3">ชื่อวัตถุดิบ</th>
+                                    <th class="py-2 px-3 w-20 text-center">จำนวน</th>
+                                    <th class="py-2 px-3 w-24 text-center">หน่วยละ (฿)</th>
+                                    <th class="py-2 px-3 w-24 text-right">รวมเงิน</th>
+                                    <th class="py-2 px-2 w-8 text-center"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="favMenuFormItemsTableBody" class="divide-y divide-slate-100">
+                                <!-- Dynamic Rows -->
+                            </tbody>
+                            <tfoot class="bg-emerald-50/70 font-bold text-slate-800 border-t border-slate-200">
+                                <tr>
+                                    <td colspan="4" class="py-2.5 px-4 text-right">รวมเป็นเงินโดยประมาณ:</td>
+                                    <td id="favMenuFormTotalCostDisplay" class="py-2.5 px-3 text-right text-emerald-850 font-bold text-sm">0.00</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="pt-3 flex items-center justify-end gap-2 border-t border-slate-100">
+                    <button type="button" onclick="FavoriteMenusModal.closeFormModal()"
+                        class="px-4 py-2 bg-white text-slate-700 border border-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-100 transition">
+                        ยกเลิก
+                    </button>
+                    <button type="submit"
+                        class="px-5 py-2 bg-emerald-850 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-floppy-disk"></i> <span>บันทึกสูตรเมนู</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 
     <!-- FOOTER -->
     <footer class="bg-white/80 border-t border-slate-200/80 py-3.5 mt-auto no-print">
@@ -815,6 +963,7 @@
     <script src="js/ui.js"></script>
     <script src="js/calendar.js"></script>
     <script src="js/standardPrices.js"></script>
+    <script src="js/favoriteMenus.js"></script>
     <script src="js/mealModal.js"></script>
     <script src="js/stats.js"></script>
     <script src="js/app.js"></script>

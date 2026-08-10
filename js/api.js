@@ -90,5 +90,29 @@ const API = {
 
     async saveStandardPrices(year, month, data) {
         return await this.call('save_standard_prices', { year, month, data: JSON.stringify(data) });
+    },
+
+    async getFavoriteMenus() {
+        try {
+            const res = await this.call('get_favorite_menus');
+            if (res && res.success && Array.isArray(res.data)) {
+                res.data.forEach(item => {
+                    if (typeof item.items === 'string') {
+                        try { item.items = JSON.parse(item.items); } catch (e) { item.items = []; }
+                    }
+                });
+            }
+            return res;
+        } catch (err) {
+            return { success: false, data: [] };
+        }
+    },
+
+    async saveFavoriteMenu(menu) {
+        return await this.call('save_favorite_menu', { menu });
+    },
+
+    async deleteFavoriteMenu(id) {
+        return await this.call('delete_favorite_menu', { id });
     }
 };
