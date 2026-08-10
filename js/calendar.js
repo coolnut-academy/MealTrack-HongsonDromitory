@@ -42,6 +42,7 @@ async function loadCalendarView() {
 
     // 2) Fetch fresh data from Google Sheets in background
     try {
+        window._lastFetchStartTime = Date.now();
         const res = await API.getMonthData(currentYear, currentMonth);
         if (res && res.success && Array.isArray(res.data)) {
             organizeMonthDataCache(res.data);
@@ -98,17 +99,30 @@ function resetToCurrentMonth() {
 }
 
 function organizeMonthDataCache(recordsArray) {
-    monthData = {};
+    const serverData = {};
     recordsArray.forEach(rec => {
         if (!rec.date) return;
-        // Standardize YYYY-MM-DD format
         let dStr = rec.date;
         if (dStr.includes('T')) dStr = dStr.split('T')[0];
 
-        if (!monthData[dStr]) {
-            monthData[dStr] = {};
+        if (!serverData[dStr]) {
+            serverData[dStr] = {};
         }
-        monthData[dStr][rec.meal_type] = rec;
+        serverData[dStr][rec.meal_type] = rec;
+    });
+
+    // Merge server data into monthData
+    Object.keys(serverData).forEach(dStr => {
+        if (!monthData[dStr]) monthData[dStr] = {};
+        Object.keys(serverData[dStr]).forEach(mealType => {
+            const localRec = monthData[dStr][mealType];
+            const serverRec = serverData[dStr][mealType];
+            // Keep local version if it has a local save timestamp newer than fetch
+            if (localRec && localRec._localSaveTime && localRec._localSaveTime > (window._lastFetchStartTime || 0)) {
+                return;
+            }
+            monthData[dStr][mealType] = serverRec;
+        });
     });
 }
 

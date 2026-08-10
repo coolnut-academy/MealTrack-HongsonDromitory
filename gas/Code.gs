@@ -78,9 +78,19 @@ function getMealRecordsSheet() {
   var sheet = ss.getSheetByName("MealRecords");
   if (!sheet) {
     sheet = ss.insertSheet("MealRecords");
-    sheet.appendRow(["id", "date", "meal_type", "menu_name", "items", "total_cost", "status", "updated_at"]);
+    sheet.appendRow(["Date", "MealType", "MenuName", "ItemsJSON", "TotalCost", "Status"]);
   }
   return sheet;
+}
+
+function findHeaderIndex(headers, possibleNames) {
+  for (var i = 0; i < headers.length; i++) {
+    var h = (headers[i] || "").toString().trim().toLowerCase();
+    for (var j = 0; j < possibleNames.length; j++) {
+      if (h === possibleNames[j].toLowerCase()) return i;
+    }
+  }
+  return -1;
 }
 
 function getMonthData(year, month) {
@@ -89,27 +99,39 @@ function getMonthData(year, month) {
   if (data.length <= 1) return { success: true, data: [] };
 
   var headers = data[0];
+  var dateIdx = findHeaderIndex(headers, ["Date", "date"]);
+  var mealTypeIdx = findHeaderIndex(headers, ["MealType", "meal_type"]);
+  var menuNameIdx = findHeaderIndex(headers, ["MenuName", "menu_name"]);
+  var itemsIdx = findHeaderIndex(headers, ["ItemsJSON", "items", "items_json"]);
+  var totalCostIdx = findHeaderIndex(headers, ["TotalCost", "total_cost"]);
+  var statusIdx = findHeaderIndex(headers, ["Status", "status"]);
+
+  if (dateIdx === -1) dateIdx = 0;
+  if (mealTypeIdx === -1) mealTypeIdx = 1;
+
   var results = [];
-  var dateIdx = headers.indexOf("date");
 
   for (var i = 1; i < data.length; i++) {
     var rowDate = data[i][dateIdx];
     if (!rowDate) continue;
 
     var d = new Date(rowDate);
+    if (isNaN(d.getTime())) continue;
+
     var rYear = d.getFullYear();
     var rMonth = d.getMonth() + 1;
 
     // Check matching year and month
     if (rYear === Number(year) && rMonth === Number(month)) {
-      var record = {};
-      for (var j = 0; j < headers.length; j++) {
-        var val = data[i][j];
-        if (headers[j] === "date" && val instanceof Date) {
-          val = Utilities.formatDate(val, Session.getScriptTimeZone(), "yyyy-MM-dd");
-        }
-        record[headers[j]] = val;
-      }
+      var dateStr = Utilities.formatDate(d, Session.getScriptTimeZone(), "yyyy-MM-dd");
+      var record = {
+        date: dateStr,
+        meal_type: mealTypeIdx >= 0 ? data[i][mealTypeIdx] : "",
+        menu_name: menuNameIdx >= 0 ? data[i][menuNameIdx] : "",
+        items: itemsIdx >= 0 ? data[i][itemsIdx] : "[]",
+        total_cost: totalCostIdx >= 0 ? Number(data[i][totalCostIdx]) || 0 : 0,
+        status: statusIdx >= 0 ? data[i][statusIdx] : "COMPLETE"
+      };
       results.push(record);
     }
   }
@@ -126,8 +148,19 @@ function saveMealRecord(rec) {
   var data = sheet.getDataRange().getValues();
   var headers = data[0];
 
-  var dateIdx = headers.indexOf("date");
-  var mealTypeIdx = headers.indexOf("meal_type");
+  var dateIdx = findHeaderIndex(headers, ["Date", "date"]);
+  var mealTypeIdx = findHeaderIndex(headers, ["MealType", "meal_type"]);
+  var menuNameIdx = findHeaderIndex(headers, ["MenuName", "menu_name"]);
+  var itemsIdx = findHeaderIndex(headers, ["ItemsJSON", "items", "items_json"]);
+  var totalCostIdx = findHeaderIndex(headers, ["TotalCost", "total_cost"]);
+  var statusIdx = findHeaderIndex(headers, ["Status", "status"]);
+
+  if (dateIdx === -1) dateIdx = 0;
+  if (mealTypeIdx === -1) mealTypeIdx = 1;
+  if (menuNameIdx === -1) menuNameIdx = 2;
+  if (itemsIdx === -1) itemsIdx = 3;
+  if (totalCostIdx === -1) totalCostIdx = 4;
+  if (statusIdx === -1) statusIdx = 5;
 
   var targetRow = -1;
   var recDateStr = rec.date.toString().split('T')[0];
@@ -148,38 +181,37 @@ function saveMealRecord(rec) {
   }
 
   var itemsStr = typeof rec.items === 'string' ? rec.items : JSON.stringify(rec.items || []);
-  var now = new Date().toISOString();
+  var menuNameVal = rec.menu_name || "";
+  var totalCostVal = Number(rec.total_cost) || 0;
+  var statusVal = rec.status || "COMPLETE";
 
   if (targetRow > 0) {
-    // Update existing row
-    var existingId = data[targetRow - 1][headers.indexOf("id")] || ("rec_" + Date.now());
-    var rowData = [
-      existingId,
-      recDateStr,
-      rec.meal_type,
-      rec.menu_name || "",
-      itemsStr,
-      rec.total_cost || 0,
-      rec.status || "COMPLETE",
-      now
-    ];
-    sheet.getRange(targetRow, 1, 1, rowData.length).setValues([rowData]);
-    return { success: true, message: "Updated meal record", id: existingId };
+    // Update existing row matching header locations
+    var maxIdx = Math.max(dateIdx, mealTypeIdx, menuNameIdx, itemsIdx, totalCostIdx, statusIdx);
+    var rowValues = data[targetRow - 1].slice(); // copy existing row array
+    rowValues[dateIdx] = recDateStr;
+    rowValues[mealTypeIdx] = rec.meal_type;
+    rowValues[menuNameIdx] = menuNameVal;
+    rowValues[itemsIdx] = itemsStr;
+    rowValues[totalCostIdx] = totalCostVal;
+    rowValues[statusIdx] = statusVal;
+
+    sheet.getRange(targetRow, 1, 1, rowValues.length).setValues([rowValues]);
+    return { success: true, message: "Updated meal record" };
   } else {
-    // Append new row
-    var newId = "rec_" + Date.now();
-    var rowData = [
-      newId,
-      recDateStr,
-      rec.meal_type,
-      rec.menu_name || "",
-      itemsStr,
-      rec.total_cost || 0,
-      rec.status || "COMPLETE",
-      now
-    ];
-    sheet.appendRow(rowData);
-    return { success: true, message: "Saved new meal record", id: newId };
+    // Construct new row array using header order
+    var newRow = [];
+    for (var h = 0; h < headers.length; h++) {
+      if (h === dateIdx) newRow.push(recDateStr);
+      else if (h === mealTypeIdx) newRow.push(rec.meal_type);
+      else if (h === menuNameIdx) newRow.push(menuNameVal);
+      else if (h === itemsIdx) newRow.push(itemsStr);
+      else if (h === totalCostIdx) newRow.push(totalCostVal);
+      else if (h === statusIdx) newRow.push(statusVal);
+      else newRow.push("");
+    }
+    sheet.appendRow(newRow);
+    return { success: true, message: "Saved new meal record" };
   }
 }
 
@@ -189,8 +221,11 @@ function deleteMealRecord(dateStr, mealType) {
   var sheet = getMealRecordsSheet();
   var data = sheet.getDataRange().getValues();
   var headers = data[0];
-  var dateIdx = headers.indexOf("date");
-  var mealTypeIdx = headers.indexOf("meal_type");
+  var dateIdx = findHeaderIndex(headers, ["Date", "date"]);
+  var mealTypeIdx = findHeaderIndex(headers, ["MealType", "meal_type"]);
+
+  if (dateIdx === -1) dateIdx = 0;
+  if (mealTypeIdx === -1) mealTypeIdx = 1;
 
   var targetDateStr = dateStr.toString().split('T')[0];
 

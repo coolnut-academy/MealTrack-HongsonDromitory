@@ -35,6 +35,47 @@ const UI = {
         }, 3500);
     },
 
+    showConfirmToast(message, confirmLabel, onConfirm, durationMs = 10000) {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = 'toast-item flex flex-col gap-2.5 p-4 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-950 shadow-xl text-xs font-medium max-w-xs animate-fade-in';
+        
+        toast.innerHTML = `
+            <div class="flex items-start gap-2">
+                <i class="fa-solid fa-circle-question text-emerald-600 text-base mt-0.5"></i>
+                <span class="flex-1 text-slate-800 leading-snug">${escapeHtml(message)}</span>
+            </div>
+            <div class="flex items-center justify-end gap-2 mt-1">
+                <button type="button" class="btn-cancel px-2.5 py-1 text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 rounded-lg text-xs transition">ข้าม</button>
+                <button type="button" class="btn-confirm px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-semibold text-xs shadow-xs transition">${escapeHtml(confirmLabel)}</button>
+            </div>
+        `;
+
+        const dismiss = () => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(10px)';
+            toast.style.transition = 'all 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        };
+
+        const timerId = setTimeout(dismiss, durationMs);
+
+        toast.querySelector('.btn-cancel').onclick = () => {
+            clearTimeout(timerId);
+            dismiss();
+        };
+
+        toast.querySelector('.btn-confirm').onclick = () => {
+            clearTimeout(timerId);
+            dismiss();
+            try { onConfirm(); } catch (e) { console.error(e); }
+        };
+
+        container.appendChild(toast);
+    },
+
     openModal(modalId) {
         const modal = document.getElementById(modalId);
         if (modal) {

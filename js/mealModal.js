@@ -340,6 +340,7 @@ const MealModal = {
         const menuInput = document.getElementById('menuNameInput');
         this.activeRecord.menu_name = menuInput ? menuInput.value.trim() : "";
         this.activeRecord.status = "COMPLETE";
+        this.activeRecord._localSaveTime = Date.now();
 
         // Save to Local Cache immediately for fast UI feedback
         if (!monthData[this.selectedDateStr]) monthData[this.selectedDateStr] = {};
@@ -366,6 +367,7 @@ const MealModal = {
         if (typeof FavoriteMenus !== 'undefined' && this.activeRecord.menu_name) {
             const menuName = this.activeRecord.menu_name.trim();
             const validItems = (this.activeRecord.items || []).filter(it => (it.item || "").trim() !== "");
+            const currentCost = this.activeRecord.total_cost;
 
             if (validItems.length > 0) {
                 const existingList = FavoriteMenus.getAll();
@@ -376,36 +378,40 @@ const MealModal = {
                     const currentItemsStr = JSON.stringify(validItems.map(i => ({ item: i.item.trim(), qty: Number(i.qty) || 0 })));
 
                     if (existingItemsStr !== currentItemsStr) {
-                        setTimeout(() => {
-                            if (confirm(`คุณได้ปรับเปลี่ยนส่วนประกอบหรือปริมาณในสูตรเมนู "${menuName}"\n\nต้องการอัพเดตสูตรนี้ใน "เมนูยอดฮิต" สำหรับใช้งานครั้งต่อไปด้วยหรือไม่?`)) {
+                        UI.showConfirmToast(
+                            `ต้องการอัพเดตสูตรเมนู "${menuName}" ใน "เมนูยอดฮิต" ด้วยส่วนประกอบใหม่หรือไม่?`,
+                            'อัพเดตสูตร',
+                            () => {
                                 FavoriteMenus.save({
                                     id: existingMenu.id,
                                     name: menuName,
                                     items: validItems,
-                                    total_cost: this.activeRecord.total_cost
+                                    total_cost: currentCost
                                 });
                                 UI.showToast(`อัพเดตสูตรเมนูยอดฮิต "${menuName}" เรียบร้อยแล้ว`, 'success');
                             }
-                        }, 400);
+                        );
                     } else {
                         FavoriteMenus.save({
                             id: existingMenu.id,
                             name: menuName,
                             items: validItems,
-                            total_cost: this.activeRecord.total_cost
+                            total_cost: currentCost
                         });
                     }
                 } else {
-                    setTimeout(() => {
-                        if (confirm(`ต้องการบันทึกเมนู "${menuName}" เข้าสู่ "เมนูยอดฮิต" สำหรับใช้เป็นสูตรค้นหาอัตโนมัติในครั้งต่อไปหรือไม่?`)) {
+                    UI.showConfirmToast(
+                        `ต้องการเพิ่มเมนู "${menuName}" เข้าสู่ "เมนูยอดฮิต" สำหรับใช้บันทึกครั้งต่อไปหรือไม่?`,
+                        'เพิ่มเมนูยอดฮิต',
+                        () => {
                             FavoriteMenus.save({
                                 name: menuName,
                                 items: validItems,
-                                total_cost: this.activeRecord.total_cost
+                                total_cost: currentCost
                             });
                             UI.showToast(`เพิ่มเมนู "${menuName}" เข้าสู่เมนูยอดฮิตเรียบร้อยแล้ว`, 'success');
                         }
-                    }, 400);
+                    );
                 }
             }
         }
