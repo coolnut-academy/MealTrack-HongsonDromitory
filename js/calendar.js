@@ -31,7 +31,9 @@ async function loadCalendarView() {
 
     // 1) Show cached data instantly (if available)
     const cached = _loadFromLocalCache();
-    if (cached && Object.keys(cached).length > 0) {
+    const hasCachedData = cached && Object.keys(cached).length > 0;
+
+    if (hasCachedData) {
         monthData = cached;
         renderCalendarGrid();
         renderMobileAgendaView();
@@ -40,16 +42,35 @@ async function loadCalendarView() {
         renderEmptyCalendarGrid();
     }
 
+    // Set UI sync state and start real-time progress bar
+    if (typeof UI !== 'undefined' && UI.setSyncStatus) {
+        UI.setSyncStatus('syncing', 'กำลังเชื่อมต่อ Google Sheets...');
+    }
+    if (typeof ProgressLoader !== 'undefined') {
+        ProgressLoader.start("กำลังเชื่อมต่อฐานข้อมูล Google Sheets...");
+    }
+
     // 2) Fetch fresh data from Google Sheets in background
+    let fetchSuccess = false;
     try {
         window._lastFetchStartTime = Date.now();
         const res = await API.getMonthData(currentYear, currentMonth);
         if (res && res.success && Array.isArray(res.data)) {
             organizeMonthDataCache(res.data);
             _saveToLocalCache();
+            fetchSuccess = true;
         }
     } catch (err) {
         console.warn("Using offline / cached calendar data:", err);
+    }
+
+    // Finish progress loader smoothly
+    if (typeof ProgressLoader !== 'undefined') {
+        ProgressLoader.finish(fetchSuccess);
+    }
+
+    if (typeof UI !== 'undefined' && UI.setSyncStatus) {
+        UI.setSyncStatus(fetchSuccess ? 'synced' : (Object.keys(monthData).length > 0 ? 'cached' : 'error'));
     }
 
     // Ensure active month standard prices are synced
@@ -102,8 +123,17 @@ function organizeMonthDataCache(recordsArray) {
     const serverData = {};
     recordsArray.forEach(rec => {
         if (!rec.date) return;
-        let dStr = rec.date;
+        let dStr = String(rec.date).trim();
         if (dStr.includes('T')) dStr = dStr.split('T')[0];
+
+        // Normalize date to YYYY-MM-DD format
+        const parts = dStr.split('-');
+        if (parts.length === 3) {
+            const y = parts[0];
+            const m = parts[1].padStart(2, '0');
+            const d = parts[2].padStart(2, '0');
+            dStr = `${y}-${m}-${d}`;
+        }
 
         if (!serverData[dStr]) {
             serverData[dStr] = {};
@@ -129,11 +159,46 @@ function organizeMonthDataCache(recordsArray) {
 function renderEmptyCalendarGrid() {
     const grid = document.getElementById('calendarGrid');
     if (grid) {
-        grid.innerHTML = '<div class="col-span-7 p-12 text-center text-slate-400 font-medium"><i class="fa-solid fa-spinner animate-spin mr-2"></i> กำลังโหลดข้อมูลปฏิทิน...</div>';
+        grid.innerHTML = `
+            <div class="col-span-7 p-4 sm:p-12 flex flex-col items-center justify-center animate-fade-in my-auto min-h-[360px]">
+                <div class="w-full max-w-md bg-white rounded-2xl p-6 sm:p-8 shadow-xl border border-emerald-200/80 text-center relative overflow-hidden">
+                    <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-800 via-emerald-600 to-gold-400"></div>
+                    
+                    <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center mx-auto mb-4 relative shadow-inner">
+                        <i class="fa-solid fa-cloud-arrow-down text-2xl sm:text-3xl text-emerald-850 animate-bounce"></i>
+                        <div class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-gold-400 rounded-full animate-ping"></div>
+                    </div>
+                    
+                    <h3 class="text-base sm:text-lg font-bold text-slate-800 mb-1">กำลังโหลดข้อมูลเมนูอาหาร...</h3>
+                    <p id="calendarLoaderStage" class="text-xs text-emerald-700 font-semibold mb-4 truncate px-2">กำลังเชื่อมต่อฐานข้อมูล Google Sheets...</p>
+
+                    <!-- Real-time Progress bar track -->
+                    <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden p-0.5 border border-slate-200 shadow-inner mb-3">
+                        <div id="calendarLoaderBar" class="h-full bg-gradient-to-r from-emerald-600 via-emerald-500 to-gold-400 rounded-full transition-all duration-300 shadow-sm" style="width: 15%;"></div>
+                    </div>
+
+                    <!-- Percentage and Stage Indicator -->
+                    <div class="flex items-center justify-between text-xs text-slate-500 font-medium">
+                        <span id="calendarLoaderStepText" class="text-[11px] sm:text-xs"><i class="fa-solid fa-spinner animate-spin mr-1 text-emerald-600"></i> กำลังดึงข้อมูล...</span>
+                        <span id="calendarLoaderPercent" class="font-bold font-mono text-emerald-850 text-sm sm:text-base">15%</span>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
+                        <i class="fa-solid fa-shield-halved text-emerald-600"></i>
+                        <span>ระบบบันทึกข้อมูลลงเครื่องอัตโนมัติ เพื่อให้เปิดได้ทันทีในครั้งถัดไป</span>
+                    </div>
+                </div>
+            </div>
+        `;
     }
     const agendaList = document.getElementById('agendaList');
     if (agendaList) {
-        agendaList.innerHTML = '<div class="p-8 text-center text-slate-400 font-medium"><i class="fa-solid fa-spinner animate-spin mr-2"></i> กำลังโหลด...</div>';
+        agendaList.innerHTML = `
+            <div class="p-8 text-center bg-white rounded-2xl border border-slate-200 text-slate-400">
+                <i class="fa-solid fa-spinner animate-spin text-2xl mb-2 text-emerald-700"></i>
+                <p class="text-xs font-semibold text-slate-700">กำลังดาวน์โหลดข้อมูลรายการอาหาร...</p>
+            </div>
+        `;
     }
 }
 
@@ -149,7 +214,7 @@ function renderCalendarGrid() {
     // Padding for days before start of month
     for (let i = 0; i < firstDay; i++) {
         const padCell = document.createElement('div');
-        padCell.className = 'bg-slate-50/50 min-h-[75px] sm:min-h-[105px] p-1.5 opacity-30 cursor-not-allowed';
+        padCell.className = 'bg-slate-50/50 min-h-[70px] sm:min-h-[105px] p-1 sm:p-1.5 opacity-30 cursor-not-allowed';
         grid.appendChild(padCell);
     }
 
@@ -160,15 +225,15 @@ function renderCalendarGrid() {
         const fullDateStr = `${currentYear}-${monthStr}-${dayStr}`;
 
         const dayCell = document.createElement('div');
-        dayCell.className = 'calendar-grid-cell bg-white p-1.5 sm:p-2 flex flex-col justify-between hover:bg-emerald-50/40 transition cursor-pointer group relative border-t border-l border-slate-100';
+        dayCell.className = 'calendar-grid-cell bg-white p-1 sm:p-2 flex flex-col justify-between hover:bg-emerald-50/40 transition cursor-pointer group relative border-t border-l border-slate-100';
         dayCell.onclick = () => MealModal.openForDate(fullDateStr);
 
-        // Day Number
+        // Day Number Header
         const dayHeader = document.createElement('div');
         dayHeader.className = 'flex items-center justify-between';
         
         const dayNum = document.createElement('span');
-        dayNum.className = 'text-xs sm:text-sm font-bold text-slate-700 group-hover:text-emerald-850';
+        dayNum.className = 'text-[11px] sm:text-sm font-bold text-slate-700 group-hover:text-emerald-850';
         dayNum.innerText = day;
         dayHeader.appendChild(dayNum);
 
@@ -179,35 +244,35 @@ function renderCalendarGrid() {
         const dRec = dayEntries['มื้อเย็น'];
 
         const contentBox = document.createElement('div');
-        contentBox.className = 'mt-1 space-y-0.5 overflow-hidden';
+        contentBox.className = 'mt-0.5 sm:mt-1 space-y-0.5 overflow-hidden w-full';
 
         if (bRec) {
             const badge = document.createElement('div');
-            badge.className = 'badge-breakfast rounded px-1.5 py-0.5 text-[10px] sm:text-xs font-semibold truncate flex items-center gap-1';
+            badge.className = 'badge-breakfast rounded px-1 sm:px-1.5 py-0.5 text-[9px] sm:text-xs font-semibold truncate flex items-center gap-0.5 sm:gap-1';
             badge.title = `มื้อเช้า: ${bRec.menu_name || 'ไม่มีชื่อเมนู'}`;
-            badge.innerHTML = `<span class="shrink-0 font-bold">🌅 เช้า:</span> <span class="truncate">${escapeHtml(bRec.menu_name || 'ไม่มีชื่อเมนู')}</span>`;
+            badge.innerHTML = `<span class="shrink-0 font-bold hidden sm:inline">🌅 เช้า:</span><span class="shrink-0 sm:hidden text-[10px]">🌅</span><span class="truncate flex-1 min-w-0 leading-tight">${escapeHtml(bRec.menu_name || 'ไม่มีชื่อเมนู')}</span>`;
             contentBox.appendChild(badge);
         }
 
         if (lRec) {
             const badge = document.createElement('div');
-            badge.className = 'badge-lunch rounded px-1.5 py-0.5 text-[10px] sm:text-xs font-semibold truncate flex items-center gap-1';
+            badge.className = 'badge-lunch rounded px-1 sm:px-1.5 py-0.5 text-[9px] sm:text-xs font-semibold truncate flex items-center gap-0.5 sm:gap-1';
             badge.title = `มื้อเที่ยง: ${lRec.menu_name || 'ไม่มีชื่อเมนู'}`;
-            badge.innerHTML = `<span class="shrink-0 font-bold">☀️ เที่ยง:</span> <span class="truncate">${escapeHtml(lRec.menu_name || 'ไม่มีชื่อเมนู')}</span>`;
+            badge.innerHTML = `<span class="shrink-0 font-bold hidden sm:inline">☀️ เที่ยง:</span><span class="shrink-0 sm:hidden text-[10px]">☀️</span><span class="truncate flex-1 min-w-0 leading-tight">${escapeHtml(lRec.menu_name || 'ไม่มีชื่อเมนู')}</span>`;
             contentBox.appendChild(badge);
         }
 
         if (dRec) {
             const badge = document.createElement('div');
-            badge.className = 'badge-dinner rounded px-1.5 py-0.5 text-[10px] sm:text-xs font-semibold truncate flex items-center gap-1';
+            badge.className = 'badge-dinner rounded px-1 sm:px-1.5 py-0.5 text-[9px] sm:text-xs font-semibold truncate flex items-center gap-0.5 sm:gap-1';
             badge.title = `มื้อเย็น: ${dRec.menu_name || 'ไม่มีชื่อเมนู'}`;
-            badge.innerHTML = `<span class="shrink-0 font-bold">🌙 เย็น:</span> <span class="truncate">${escapeHtml(dRec.menu_name || 'ไม่มีชื่อเมนู')}</span>`;
+            badge.innerHTML = `<span class="shrink-0 font-bold hidden sm:inline">🌙 เย็น:</span><span class="shrink-0 sm:hidden text-[10px]">🌙</span><span class="truncate flex-1 min-w-0 leading-tight">${escapeHtml(dRec.menu_name || 'ไม่มีชื่อเมนู')}</span>`;
             contentBox.appendChild(badge);
         }
 
         if (!bRec && !lRec && !dRec) {
             const emptyAdd = document.createElement('div');
-            emptyAdd.className = 'opacity-0 group-hover:opacity-100 text-[10px] text-emerald-600 font-medium flex items-center justify-center py-1 transition';
+            emptyAdd.className = 'opacity-0 group-hover:opacity-100 text-[10px] text-emerald-600 font-medium flex items-center justify-center py-0.5 sm:py-1 transition';
             emptyAdd.innerHTML = '<i class="fa-solid fa-plus mr-0.5"></i> เพิ่ม';
             contentBox.appendChild(emptyAdd);
         }

@@ -110,30 +110,45 @@ function getMonthData(year, month) {
   if (mealTypeIdx === -1) mealTypeIdx = 1;
 
   var results = [];
+  var targetYear = Number(year);
+  var targetMonth = Number(month);
+  var targetMonthPadded = targetMonth < 10 ? "0" + targetMonth : "" + targetMonth;
+  var targetPrefix = targetYear + "-" + targetMonthPadded; // e.g. "2026-08"
 
   for (var i = 1; i < data.length; i++) {
     var rowDate = data[i][dateIdx];
     if (!rowDate) continue;
 
-    var d = new Date(rowDate);
-    if (isNaN(d.getTime())) continue;
-
-    var rYear = d.getFullYear();
-    var rMonth = d.getMonth() + 1;
-
-    // Check matching year and month
-    if (rYear === Number(year) && rMonth === Number(month)) {
-      var dateStr = Utilities.formatDate(d, Session.getScriptTimeZone(), "yyyy-MM-dd");
-      var record = {
-        date: dateStr,
-        meal_type: mealTypeIdx >= 0 ? data[i][mealTypeIdx] : "",
-        menu_name: menuNameIdx >= 0 ? data[i][menuNameIdx] : "",
-        items: itemsIdx >= 0 ? data[i][itemsIdx] : "[]",
-        total_cost: totalCostIdx >= 0 ? Number(data[i][totalCostIdx]) || 0 : 0,
-        status: statusIdx >= 0 ? data[i][statusIdx] : "COMPLETE"
-      };
-      results.push(record);
+    var dateStr = "";
+    if (typeof rowDate === "string") {
+      dateStr = rowDate.trim();
+      if (dateStr.indexOf("T") !== -1) dateStr = dateStr.split("T")[0];
+      if (dateStr.indexOf(targetPrefix) !== 0) {
+        var d = new Date(rowDate);
+        if (isNaN(d.getTime()) || d.getFullYear() !== targetYear || (d.getMonth() + 1) !== targetMonth) {
+          continue;
+        }
+        dateStr = Utilities.formatDate(d, Session.getScriptTimeZone(), "yyyy-MM-dd");
+      }
+    } else if (rowDate instanceof Date) {
+      if (isNaN(rowDate.getTime())) continue;
+      if (rowDate.getFullYear() !== targetYear || (rowDate.getMonth() + 1) !== targetMonth) {
+        continue;
+      }
+      dateStr = Utilities.formatDate(rowDate, Session.getScriptTimeZone(), "yyyy-MM-dd");
     }
+
+    if (!dateStr) continue;
+
+    var record = {
+      date: dateStr,
+      meal_type: mealTypeIdx >= 0 ? data[i][mealTypeIdx] : "",
+      menu_name: menuNameIdx >= 0 ? data[i][menuNameIdx] : "",
+      items: itemsIdx >= 0 ? data[i][itemsIdx] : "[]",
+      total_cost: totalCostIdx >= 0 ? Number(data[i][totalCostIdx]) || 0 : 0,
+      status: statusIdx >= 0 ? data[i][statusIdx] : "COMPLETE"
+    };
+    results.push(record);
   }
 
   return { success: true, data: results };

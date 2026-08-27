@@ -11,10 +11,10 @@ const API = {
         }).catch(() => {});
     },
 
-    async call(action, payload = {}) {
+    async call(action, payload = {}, retryCount = 1) {
         payload.action = action;
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 12000); // 12s timeout
+        const timeoutId = setTimeout(() => controller.abort(), 35000); // 35s timeout for GAS cold start & mobile 4G/5G
         try {
             const response = await fetch(CONFIG.API_URL, {
                 method: 'POST',
@@ -27,6 +27,11 @@ const API = {
             return data;
         } catch (err) {
             clearTimeout(timeoutId);
+            if (retryCount > 0) {
+                console.warn(`[API Retry] Retrying ${action}... (${retryCount} left)`);
+                await new Promise(r => setTimeout(r, 1000));
+                return this.call(action, payload, retryCount - 1);
+            }
             console.error(`[API Error] ${action}:`, err);
             throw err;
         }

@@ -77,10 +77,13 @@ body {
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
-}
-
 @keyframes slideUp {
     from { transform: translateY(16px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideDown {
+    from { transform: translateY(-16px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
 
@@ -88,8 +91,18 @@ body {
     animation: slideUp var(--transition-smooth) forwards;
 }
 
+.animate-slide-down {
+    animation: slideDown var(--transition-smooth) forwards;
+}
+
 .animate-fade-in {
     animation: fadeIn var(--transition-fast) forwards;
+}
+
+/* Global Overflow-X guard */
+html, body {
+    max-width: 100vw;
+    overflow-x: hidden;
 }
 
 /* Responsive Calendar Grid & Day Cells */
@@ -161,41 +174,117 @@ body {
     animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Print Styles */
+/* Print Styles & Official Government Document Formatting */
+@page {
+    size: A4 portrait;
+    margin: 6mm 8mm 6mm 8mm;
+}
+
 @media print {
-    .no-print {
-        display: none !important;
-    }
-    body {
-        background: white !important;
-        color: black !important;
-    }
-    .modal-backdrop {
-        position: static !important;
-        background: transparent !important;
-        padding: 0 !important;
-        display: block !important;
-    }
-    .glass-panel {
-        box-shadow: none !important;
-        border: none !important;
+    /* 1. Global Reset: Remove flex and full-height constraints from html/body */
+    html, body,
+    html.printing-active, body.printing-active,
+    body.printing-daily, body.printing-stats {
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
         max-height: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        display: block !important;
+        overflow: visible !important;
+        font-family: 'Sarabun', 'TH Sarabun PSK', 'TH Sarabun New', sans-serif !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    /* 2. Hide all body children except the targeted print area */
+    body.printing-daily > *:not(#dailyOfficialPrintArea) {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        max-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+    }
+
+    /* Hide standard UI elements unconditionally */
+    header, footer, main, nav,
+    #authModal, #mealModal, #standardPricesModal, #addStandardItemModal,
+    #favoriteMenusModal, #favMenuFormModal, #dailyExportModal, #dailyPreviewModal,
+    #statsModal, #toastContainer, #topProgressBarContainer, #mobileMenuDrawer,
+    #mobileMenuBackdrop, .no-print, [no-print] {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* 3. When Printing Daily Official Report */
+    body.printing-daily #dailyOfficialPrintArea {
+        display: block !important;
+        visibility: visible !important;
+        position: static !important;
         width: 100% !important;
         max-width: 100% !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+        color: #000000 !important;
     }
-    .print-container {
+
+    body.printing-daily #dailyOfficialPrintArea * {
+        visibility: visible !important;
+    }
+
+    /* 4. When Printing Stats Modal */
+    body.printing-stats #statsModal,
+    body.printing-stats #printReportArea {
+        display: block !important;
+        visibility: visible !important;
+        position: static !important;
         width: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
-        box-shadow: none !important;
-        overflow: visible !important;
+        background: #ffffff !important;
     }
-    table {
-        page-break-inside: auto;
+    body.printing-stats #printReportArea * {
+        visibility: visible !important;
     }
-    tr {
-        page-break-inside: avoid;
-        page-break-after: auto;
+
+    /* 5. Official Document Typography & Tables */
+    .official-daily-report {
+        padding: 0 !important;
+        margin: 0 auto !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        font-size: 9.5pt !important;
+        line-height: 1.25 !important;
+        color: #000000 !important;
+        background: #ffffff !important;
+    }
+
+    .official-daily-report table {
+        border-collapse: collapse !important;
+        width: 100% !important;
+        font-size: 9pt !important;
+    }
+
+    .official-daily-report th,
+    .official-daily-report td {
+        border: 1px solid #000000 !important;
+        padding: 2.5px 5px !important;
+        color: #000000 !important;
+    }
+
+    .official-signatures {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        margin-top: 12px !important;
     }
 }
 

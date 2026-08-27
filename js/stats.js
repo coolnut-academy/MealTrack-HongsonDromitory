@@ -236,6 +236,22 @@ const Stats = {
         link.click();
         document.body.removeChild(link);
         UI.showToast("ดาวน์โหลดไฟล์ CSV รายงานสรุปเรียบร้อยแล้ว", "success");
+    },
+
+    printReport() {
+        document.body.classList.remove('printing-daily');
+        document.body.classList.add('printing-stats');
+
+        const cleanup = () => {
+            document.body.classList.remove('printing-stats');
+            window.removeEventListener('afterprint', cleanup);
+        };
+        window.addEventListener('afterprint', cleanup);
+
+        setTimeout(() => {
+            window.print();
+            setTimeout(cleanup, 2000);
+        }, 100);
     }
 };
 
