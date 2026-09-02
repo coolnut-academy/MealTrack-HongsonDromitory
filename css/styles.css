@@ -143,18 +143,34 @@ html, body {
     border: 1px solid #c7d2fe;
 }
 
-/* Dev Badge Pill Styling (Clean & Responsive) */
-.dev-badge-pill {
-    background: #f2fbf6;
-    border: 1px solid #bbf7d0;
-    box-shadow: 0 2px 12px -2px rgba(16, 185, 129, 0.12);
+/* Dev / Team Badge Card Styling (Clean, Mint & Responsive) */
+.dev-badge-pill,
+.team-badge-card {
+    background: #f0fdf9;
+    border: 1.5px solid #a7f3d0;
+    border-radius: 20px;
+    box-shadow: 0 4px 18px -4px rgba(16, 185, 129, 0.12);
     transition: all var(--transition-fast);
 }
 
-.dev-badge-pill:hover {
-    border-color: #86efac;
-    box-shadow: 0 4px 16px -2px rgba(16, 185, 129, 0.2);
+.dev-badge-pill:hover,
+.team-badge-card:hover {
+    border-color: #6ee7b7;
+    box-shadow: 0 6px 22px -4px rgba(16, 185, 129, 0.18);
     background: #ecfdf5;
+}
+
+.team-badge-row {
+    background: #ffffff;
+    border: 1px solid rgba(167, 243, 208, 0.6);
+    border-radius: 14px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    transition: all var(--transition-fast);
+}
+
+.team-badge-row:hover {
+    border-color: #a7f3d0;
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.08);
 }
 
 /* Toast Container */
